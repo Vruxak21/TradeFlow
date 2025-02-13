@@ -5,6 +5,7 @@ import 'package:my_app/pages/page1.dart';
 import 'package:my_app/pages/page2.dart';
 import 'package:my_app/pages/page3.dart';
 import 'package:my_app/pages/page4.dart';
+import 'package:animate_do/animate_do.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -24,38 +25,117 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200], // Professional light theme
-      appBar: AppBar(
-        title: const Text(
-          "Dashboard",
-          style: TextStyle(
-              fontSize: 22, fontWeight: FontWeight.w600, color: Colors.black87),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 3,
-        actions: [
-          IconButton(
-            onPressed: signUserOut,
-            icon: const Icon(Icons.logout, color: Colors.black87),
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            colors: [
+              Colors.orange.shade900,
+              Colors.orange.shade800,
+              Colors.orange.shade400,
+            ],
           ),
-        ],
-      ),
-      body: Center(
+        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            buildOptionContainer(context, "Financial Chatbot",
-                 Page1(), Icons.smart_toy),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    FadeInLeft(
+                      duration: const Duration(milliseconds: 1000),
+                      child: const Text(
+                        "Services",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    FadeInRight(
+                      duration: const Duration(milliseconds: 1000),
+                      child: IconButton(
+                        onPressed: signUserOut,
+                        icon: const Icon(Icons.logout, color: Colors.white, size: 28),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 20),
-            buildOptionContainer(context, "AI Investment Picks", const Page2(),
-                Icons.auto_graph),
-            const SizedBox(height: 20),
-            buildOptionContainer(context, "Market Trends & Insights",
-                const Page3(), Icons.trending_up),
-            const SizedBox(height: 20),
-            buildOptionContainer(
-                context, "Coming Soon...", const Page4(), Icons.more_horiz),
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(60),
+                    topRight: Radius.circular(60),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 30),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Column(
+                            children: [
+                              FadeInUp(
+                                duration: const Duration(milliseconds: 1200),
+                                child: buildOptionContainer(
+                                  context,
+                                  "Financial Chatbot",
+                                  Page1(),
+                                  Icons.smart_toy,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              FadeInUp(
+                                duration: const Duration(milliseconds: 1400),
+                                child: buildOptionContainer(
+                                  context,
+                                  "AI Investment Picks",
+                                  const Page2(),
+                                  Icons.auto_graph,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              FadeInUp(
+                                duration: const Duration(milliseconds: 1600),
+                                child: buildOptionContainer(
+                                  context,
+                                  "Market Trends & Insights",
+                                  const Page3(),
+                                  Icons.trending_up,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              FadeInUp(
+                                duration: const Duration(milliseconds: 1800),
+                                child: buildOptionContainer(
+                                  context,
+                                  "Coming Soon...",
+                                  const Page4(),
+                                  Icons.more_horiz,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -67,38 +147,50 @@ class HomePage extends StatelessWidget {
     return GestureDetector(
       onTap: () => navigateToPage(context, page),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.85,
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              blurRadius: 10,
+              color: Colors.orange.withOpacity(0.1),
+              blurRadius: 20,
               spreadRadius: 2,
-              offset: const Offset(0, 5),
+              offset: const Offset(0, 10),
             ),
           ],
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.blue[800], size: 30),
-            const SizedBox(width: 15),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.orange.shade900,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 20),
             Expanded(
-              // Added Expanded here
               child: Text(
                 title,
                 style: const TextStyle(
                   color: Colors.black87,
                   fontSize: 18,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
-                overflow: TextOverflow.ellipsis, // Prevents overflow
-                maxLines: 1, // Ensures text remains in a single line
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 20),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.orange.shade900,
+              size: 20,
+            ),
           ],
         ),
       ),

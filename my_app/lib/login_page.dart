@@ -319,30 +319,31 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 30),
-                            Expanded(
-                              child: FadeInUp(
-                                duration: const Duration(milliseconds: 1900),
-                                child: MaterialButton(
-                                  onPressed: () => widget.onTap?.call(),
-                                  height: 50,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(50),
-                                  ),
-                                  color: Colors.black,
-                                  child: const Center(
-                                    child: Text(
-                                      "Register",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 1900),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Don\'t have an account?',
+                                style: TextStyle(color: Colors.grey[700]),
+                              ),
+                              const SizedBox(width: 4),
+                              GestureDetector(
+                                onTap: widget.onTap,
+                                child: Text(
+                                  'Register now',
+                                  style: TextStyle(
+                                    color: Colors.orange[900],
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),

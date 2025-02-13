@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:animate_do/animate_do.dart';
 import 'dart:convert';
 
 const String apiKey = "AIzaSyCT0EJjWwCmUiikcNuFLzC-IKqyvtFObzg";
 const String apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
+class AppTheme {
+  static const primary = Color(0xFFE65100);
+  static const secondary = Color(0xFFEF6C00);
+  static const accent = Color(0xFFFFA726);
+  static final background = Colors.grey.shade50;
+  static const cardLight = Colors.white;
+  static final cardDark = Colors.orange.shade800;
+}
+
 class Page1 extends StatefulWidget {
+  const Page1({Key? key}) : super(key: key);
+
   @override
   _Page1State createState() => _Page1State();
 }
@@ -13,24 +25,49 @@ class Page1 extends StatefulWidget {
 class _Page1State extends State<Page1> {
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, String>> _messages = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
 
   Future<void> _sendMessage() async {
-    if (_controller.text.isEmpty) return;
+    if (_controller.text.isEmpty || _isLoading) return;
     String userMessage = _controller.text;
 
     setState(() {
       _messages.add({"sender": "user", "text": userMessage});
-      _messages.add({"sender": "bot", "text": "..."}); // Show only dots while loading
+      _messages.add({"sender": "bot", "text": "..."});
+      _isLoading = true;
     });
 
     _controller.clear();
+    _scrollToBottom();
 
-    String botResponse = await _fetchGeminiResponse(userMessage);
+    try {
+      String botResponse = await _fetchGeminiResponse(userMessage);
+      setState(() {
+        _messages.removeLast();
+        _messages.add({
+          "sender": "bot",
+          "text": botResponse.isNotEmpty 
+              ? botResponse 
+              : "Sorry, I can only answer financial questions. Please ask about investments, stocks, or finance."
+        });
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+      _scrollToBottom();
+    }
+  }
 
-    setState(() {
-      _messages.removeLast(); // Remove loading message
-      if (botResponse.isNotEmpty) {
-        _messages.add({"sender": "bot", "text": botResponse});
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
       }
     });
   }
@@ -41,83 +78,77 @@ class _Page1State extends State<Page1> {
         Uri.parse("$apiUrl?key=$apiKey"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "contents": [
-            {
-              "parts": [
-                {
-                  "text": "If the query is related to investment, stocks, or finance, answer properly. Otherwise, return exactly 'IGNORE'. Query: $query"
-                }
-              ]
-            }
-          ]
+          "contents": [{
+            "parts": [{
+              "text": "If the query is related to investment, stocks, or finance, answer properly. Otherwise, return exactly 'IGNORE'. Query: $query"
+            }]
+          }]
         }),
       );
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-
-        if (jsonResponse['candidates'] != null &&
-            jsonResponse['candidates'].isNotEmpty &&
-            jsonResponse['candidates'][0]['content']['parts'] != null &&
-            jsonResponse['candidates'][0]['content']['parts'].isNotEmpty) {
-          String rawText = jsonResponse['candidates'][0]['content']['parts'][0]['text'];
-
-          if (rawText.trim() == "IGNORE") {
-            return ""; // Ignore non-financial queries
-          }
-
-          return _formatResponse(rawText);
-        } else {
-          return "";
-        }
-      } else {
-        return "";
+        final text = jsonResponse['candidates']?[0]['content']['parts']?[0]['text'] ?? '';
+        return text.trim() == "IGNORE" ? "" : _formatResponse(text);
       }
+      return "";
     } catch (e) {
       return "";
     }
   }
 
   String _formatResponse(String text) {
-    text = text.replaceAll("**", ""); // Remove bold markers
-    text = text.replaceAll("* ", "• "); // Convert lists to bullet points
-    text = text.replaceAll("*", "• "); // Handle cases where * is not followed by a space
-
     return text
+        .replaceAll("**", "")
+        .replaceAll(RegExp(r'\*+'), '• ')
         .split("\n")
-        .map((line) => line.trim().isNotEmpty ? line.trim() : "\n")
-        .join("\n"); // Ensure proper spacing and formatting
+        .map((line) => line.trim())
+        .join("\n");
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Financial Chatbot"),
-        backgroundColor: Colors.blueAccent,
+        title: const Text("Financial Chatbot"),
+        backgroundColor: AppTheme.primary, 
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.all(10),
+              controller: _scrollController,
+              padding: const EdgeInsets.all(12),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final message = _messages[index];
                 final isUser = message["sender"] == "user";
-                return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    padding: EdgeInsets.all(12),
-                    margin: EdgeInsets.symmetric(vertical: 5),
-                    decoration: BoxDecoration(
-                      color: isUser ? Colors.blueAccent : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      message["text"]!,
-                      style: TextStyle(
-                        color: isUser ? Colors.white : Colors.black,
+                
+                return FadeIn(
+                  duration: const Duration(milliseconds: 200),
+                  child: Align(
+                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.8,
+                      ),
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isUser 
+                            ? AppTheme.secondary 
+                            : AppTheme.accent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        message["text"]!,
+                        style: TextStyle(
+                          color: isUser ? Colors.white : Colors.black,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -126,7 +157,7 @@ class _Page1State extends State<Page1> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(12),
             child: Row(
               children: [
                 Expanded(
@@ -134,17 +165,30 @@ class _Page1State extends State<Page1> {
                     controller: _controller,
                     decoration: InputDecoration(
                       hintText: "Ask about stocks, investments...",
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      filled: true,
+                      fillColor: AppTheme.background, 
                     ),
+                    onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.send, color: Colors.blueAccent),
-                  onPressed: _sendMessage,
-                )
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: AppTheme.primary,
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: _sendMessage,
+                  ),
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
