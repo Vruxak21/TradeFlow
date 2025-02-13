@@ -1,9 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:my_app/components/my_textfield.dart';
-import 'package:my_app/components/my_button.dart';
-import 'package:my_app/components/square_tile.dart';
+import 'package:animate_do/animate_do.dart';
 
 class LoginPage extends StatefulWidget {
   final Function()? onTap;
@@ -16,13 +14,12 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
-  final emailController =
-      TextEditingController(); 
+  final emailController = TextEditingController();
 
   Future<void> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return; 
+      if (googleUser == null) return;
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -50,7 +47,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
- 
   void _showInvalidDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -68,7 +64,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  
   Future<void> sendPasswordResetEmail(BuildContext context) async {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(
@@ -80,7 +75,6 @@ class _LoginPageState extends State<LoginPage> {
       _showErrorDialog(context, "Error", e.message ?? "An error occurred.");
     }
   }
-
 
   void _showSuccessDialog(BuildContext context, String message) {
     showDialog(
@@ -114,7 +108,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-
   void showForgotPasswordUI(BuildContext context) {
     showDialog(
       context: context,
@@ -128,12 +121,23 @@ class _LoginPageState extends State<LoginPage> {
               decoration: const InputDecoration(labelText: "Enter your email"),
             ),
             const SizedBox(height: 20),
-            MyButton(
-              text: "Send Reset Link",
-              onTap: () {
+            MaterialButton(
+              onPressed: () {
                 sendPasswordResetEmail(context);
                 Navigator.pop(context);
               },
+              height: 50,
+              color: Colors.orange[900],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: const Center(
+                child: Text(
+                  "Send Reset Link",
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
           ],
         ),
@@ -144,89 +148,209 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 30),
-              const Icon(Icons.lock, size: 80),
-              const SizedBox(height: 30),
-              Text('Welcome',
-                  style: TextStyle(color: Colors.grey[700], fontSize: 16)),
-              const SizedBox(height: 20),
-              MyTextField(
-                  controller: usernameController,
-                  hintText: 'Email',
-                  obscureText: false),
-              const SizedBox(height: 10),
-              MyTextField(
-                  controller: passwordController,
-                  hintText: 'Password',
-                  obscureText: true),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    GestureDetector(
-                      onTap: () => showForgotPasswordUI(context),
-                      child: Text('Forgot Password?',
-                          style: TextStyle(
-                              color: Colors.blue, fontWeight: FontWeight.bold)),
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+            gradient: LinearGradient(begin: Alignment.topCenter, colors: [
+          Colors.orange.shade900,
+          Colors.orange.shade800,
+          Colors.orange.shade400
+        ])),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const SizedBox(height: 80),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  FadeInUp(
+                    duration: const Duration(milliseconds: 1000),
+                    child: const Text(
+                      "Login",
+                      style: TextStyle(color: Colors.white, fontSize: 40),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              MyButton(text: "Sign In", onTap: () => signUserIn(context)),
-              const SizedBox(height: 30),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child:
-                            Divider(thickness: 0.5, color: Colors.grey[400])),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Text('Or continue with',
-                          style: TextStyle(color: Colors.grey[700])),
+                  ),
+                  const SizedBox(height: 10),
+                  FadeInUp(
+                    duration: const Duration(milliseconds: 1300),
+                    child: const Text(
+                      "Welcome Back",
+                      style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
-                    Expanded(
-                        child:
-                            Divider(thickness: 0.5, color: Colors.grey[400])),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-             
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: signInWithGoogle, 
-                    child: SquareTile(imagePath: 'lib/images/google.png'),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Not a member?',
-                      style: TextStyle(color: Colors.grey[700])),
-                  const SizedBox(width: 4),
-                  GestureDetector(
-                    onTap: widget.onTap,
-                    child: const Text('Register now',
-                        style: TextStyle(
-                            color: Colors.blue, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(60),
+                    topRight: Radius.circular(60),
                   ),
-                ],
+                ),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(30),
+                    child: Column(
+                      children: <Widget>[
+                        const SizedBox(height: 60),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 1400),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color.fromRGBO(225, 95, 27, .3),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 10),
+                                )
+                              ],
+                            ),
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                          color: Colors.grey.shade200),
+                                    ),
+                                  ),
+                                  child: TextField(
+                                    controller: usernameController,
+                                    decoration: const InputDecoration(
+                                      hintText: "Email or Phone number",
+                                      hintStyle: TextStyle(color: Colors.grey),
+                                      border: InputBorder.none,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                          color: Colors.grey.shade200),
+                                    ),
+                                  ),
+                                  child: TextField(
+                                    controller: passwordController,
+                                    obscureText: true,
+                                    decoration: const InputDecoration(
+                                      hintText: "Password",
+                                      hintStyle: TextStyle(color: Colors.grey),
+                                      border: InputBorder.none,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 1500),
+                          child: GestureDetector(
+                            onTap: () => showForgotPasswordUI(context),
+                            child: const Text(
+                              "Forgot Password?",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 1600),
+                          child: MaterialButton(
+                            onPressed: () => signUserIn(context),
+                            height: 50,
+                            color: Colors.orange[900],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                "Login",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 50),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 1700),
+                          child: const Text(
+                            "Continue with Google",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: FadeInUp(
+                                duration: const Duration(milliseconds: 1800),
+                                child: MaterialButton(
+                                  onPressed: signInWithGoogle,
+                                  height: 50,
+                                  color: Colors.blue,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(50),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      "Google",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 30),
+                            Expanded(
+                              child: FadeInUp(
+                                duration: const Duration(milliseconds: 1900),
+                                child: MaterialButton(
+                                  onPressed: () => widget.onTap?.call(),
+                                  height: 50,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(50),
+                                  ),
+                                  color: Colors.black,
+                                  child: const Center(
+                                    child: Text(
+                                      "Register",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
