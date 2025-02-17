@@ -40,19 +40,38 @@ class NewsService {
 
   Future<List<NewsArticle>> getFinancialNews() async {
     try {
+      final String url =
+          '$baseUrl/everything?q=finance OR "stock market" OR "mutual funds"&language=en&sortBy=publishedAt&apiKey=$apiKey';
+
+      print("Fetching news from: $url");
+
       final response = await http.get(
-        Uri.parse('$baseUrl/top-headlines?category=business&language=en&apiKey=$apiKey'),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
       );
+
+      print("Response Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> articles = data['articles'];
-        return articles.map((article) => NewsArticle.fromJson(article)).toList();
+
+        print("Number of articles fetched: ${articles.length}");
+
+        List<NewsArticle> newsList =
+            articles.map((article) => NewsArticle.fromJson(article)).toList();
+
+        // Sort news articles by the latest date (latest first)
+        newsList.sort((a, b) => DateTime.parse(b.publishedAt)
+            .compareTo(DateTime.parse(a.publishedAt)));
+
+        return newsList;
       } else {
         throw Exception('Failed to load news: ${response.statusCode}');
       }
     } catch (e) {
+      print("Error fetching news: $e");
       throw Exception('Error fetching news: $e');
     }
   }
@@ -85,7 +104,7 @@ class _Page3State extends State<Page3> {
       });
 
       final news = await _newsService.getFinancialNews();
-
+      print(news);
       if (mounted) {
         setState(() {
           _news = news;
@@ -162,13 +181,15 @@ class _Page3State extends State<Page3> {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                      icon: const Icon(Icons.arrow_back,
+                          color: Colors.white, size: 28),
                     ),
                     const Text(
                       "Market News",
@@ -180,7 +201,8 @@ class _Page3State extends State<Page3> {
                     ),
                     IconButton(
                       onPressed: _loadNews,
-                      icon: const Icon(Icons.refresh, color: Colors.white, size: 28),
+                      icon: const Icon(Icons.refresh,
+                          color: Colors.white, size: 28),
                     ),
                   ],
                 ),
@@ -236,7 +258,8 @@ class _Page3State extends State<Page3> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -368,7 +391,8 @@ class _Page3State extends State<Page3> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 TextButton.icon(
-                                  onPressed: () => _openArticle(article.url), // Open article on "Read More"
+                                  onPressed: () => _openArticle(article
+                                      .url), // Open article on "Read More"
                                   icon: Icon(
                                     Icons.arrow_forward_ios,
                                     size: 16,
