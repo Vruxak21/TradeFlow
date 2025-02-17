@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:animate_do/animate_do.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   final Function()? onTap;
@@ -15,83 +16,118 @@ class _LoginPageState extends State<LoginPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final emailController = TextEditingController();
+  bool isLoading = false;
+  bool isGoogleLoading = false;
 
+  // Updated Google Sign In function with loading state
   Future<void> signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
+    if (isGoogleLoading) return; // Prevent multiple clicks
 
+    setState(() {
+      isGoogleLoading = true;
+    });
+
+    try {
+      // Initialize Google Sign In
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+
+      // Begin interactive sign in process
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      // Check if sign in was successful
+      if (googleUser == null) {
+        setState(() {
+          isGoogleLoading = false;
+        });
+        return;
+      }
+
+      // Get auth details from request
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+
+      // Create credential for Firebase
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
+      // Sign in to Firebase with credential
       await FirebaseAuth.instance.signInWithCredential(credential);
       print("Google Sign-In Successful: ${googleUser.displayName}");
+
+      // Navigate to home page after successful sign in
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home_page');
+      }
     } catch (e) {
       print("Google Sign-In Error: $e");
+      _showErrorDialog(
+          context, "Error", "Failed to sign in with Google. Please try again.");
+    } finally {
+      if (mounted) {
+        setState(() {
+          isGoogleLoading = false;
+        });
+      }
     }
   }
 
-  void signUserIn(BuildContext context) async {
+  // Updated manual sign in function with loading state
+  Future<void> signUserIn(BuildContext context) async {
+    if (isLoading) return; // Prevent multiple clicks
+
+    setState(() {
+      isLoading = true;
+    });
+
     try {
+      // Validate input fields
+      if (usernameController.text.trim().isEmpty ||
+          passwordController.text.trim().isEmpty) {
+        throw FirebaseAuthException(
+            code: 'invalid-input', message: 'Please fill in all fields');
+      }
+
+      // Attempt to sign in
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: usernameController.text.trim(),
         password: passwordController.text.trim(),
       );
-      print("Login Successful");
+
+      // Navigate to home page after successful sign in
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home_page');
+      }
     } on FirebaseAuthException catch (e) {
-      _showInvalidDialog(context);
+      String errorMessage = "Invalid email or password";
+
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = "No user found with this email.";
+          break;
+        case 'wrong-password':
+          errorMessage = "Wrong password provided.";
+          break;
+        case 'invalid-email':
+          errorMessage = "Invalid email address.";
+          break;
+        case 'invalid-input':
+          errorMessage = e.message ?? "Please fill in all fields";
+          break;
+      }
+
+      _showErrorDialog(context, "Error", errorMessage);
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
-  void _showInvalidDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Invalid Email or Password"),
-        content: const Text(
-            "The credentials you entered are incorrect. Please try again."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> sendPasswordResetEmail(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(
-        email: emailController.text.trim(),
-      );
-      _showSuccessDialog(
-          context, "Password reset email sent. Please check your inbox.");
-    } on FirebaseAuthException catch (e) {
-      _showErrorDialog(context, "Error", e.message ?? "An error occurred.");
-    }
-  }
-
-  void _showSuccessDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Success"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // Rest of the helper methods remain the same...
   void _showErrorDialog(BuildContext context, String title, String message) {
     showDialog(
       context: context,
@@ -104,43 +140,6 @@ class _LoginPageState extends State<LoginPage> {
             child: const Text("OK"),
           ),
         ],
-      ),
-    );
-  }
-
-  void showForgotPasswordUI(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Forgot Password"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: "Enter your email"),
-            ),
-            const SizedBox(height: 20),
-            MaterialButton(
-              onPressed: () {
-                sendPasswordResetEmail(context);
-                Navigator.pop(context);
-              },
-              height: 50,
-              color: Colors.orange[900],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: const Center(
-                child: Text(
-                  "Send Reset Link",
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -160,6 +159,7 @@ class _LoginPageState extends State<LoginPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             const SizedBox(height: 80),
+            // Header section remains the same...
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -199,6 +199,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       children: <Widget>[
                         const SizedBox(height: 60),
+                        // Login form section
                         FadeInUp(
                           duration: const Duration(milliseconds: 1400),
                           child: Container(
@@ -255,6 +256,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 40),
+                        // Forgot Password section
                         FadeInUp(
                           duration: const Duration(milliseconds: 1500),
                           child: GestureDetector(
@@ -266,27 +268,40 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 40),
+                        // Login button with loading state
                         FadeInUp(
                           duration: const Duration(milliseconds: 1600),
                           child: MaterialButton(
-                            onPressed: () => signUserIn(context),
+                            onPressed:
+                                isLoading ? null : () => signUserIn(context),
                             height: 50,
                             color: Colors.orange[900],
+                            disabledColor: Colors.orange[300],
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(50),
                             ),
-                            child: const Center(
-                              child: Text(
-                                "Login",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            child: Center(
+                              child: isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Login",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 50),
+                        // Google Sign In section
                         FadeInUp(
                           duration: const Duration(milliseconds: 1700),
                           child: const Text(
@@ -301,20 +316,31 @@ class _LoginPageState extends State<LoginPage> {
                               child: FadeInUp(
                                 duration: const Duration(milliseconds: 1800),
                                 child: MaterialButton(
-                                  onPressed: signInWithGoogle,
+                                  onPressed:
+                                      isGoogleLoading ? null : signInWithGoogle,
                                   height: 50,
                                   color: Colors.blue,
+                                  disabledColor: Colors.blue[300],
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(50),
                                   ),
-                                  child: const Center(
-                                    child: Text(
-                                      "Google",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                  child: Center(
+                                    child: isGoogleLoading
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Text(
+                                            "Google",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                   ),
                                 ),
                               ),
@@ -322,6 +348,7 @@ class _LoginPageState extends State<LoginPage> {
                           ],
                         ),
                         const SizedBox(height: 30),
+                        // Register link section
                         FadeInUp(
                           duration: const Duration(milliseconds: 1900),
                           child: Row(
@@ -353,6 +380,73 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void showForgotPasswordUI(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Forgot Password"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: "Enter your email"),
+            ),
+            const SizedBox(height: 20),
+            MaterialButton(
+              onPressed: () {
+                sendPasswordResetEmail(context);
+                Navigator.pop(context);
+              },
+              height: 50,
+              color: Colors.orange[900],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: const Center(
+                child: Text(
+                  "Send Reset Link",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> sendPasswordResetEmail(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: emailController.text.trim(),
+      );
+      _showSuccessDialog(
+          context, "Password reset email sent. Please check your inbox.");
+    } on FirebaseAuthException catch (e) {
+      _showErrorDialog(context, "Error", e.message ?? "An error occurred.");
+    }
+  }
+
+  void _showSuccessDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Success"),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
       ),
     );
   }
