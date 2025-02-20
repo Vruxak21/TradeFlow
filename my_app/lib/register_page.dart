@@ -16,8 +16,16 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
   final confirmpass = TextEditingController();
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  bool isLoading = false;
+  bool isGoogleLoading = false;
 
   void signUserUp(BuildContext context) async {
+    if (isLoading) return; // Prevent multiple clicks
+    
+    setState(() {
+      isLoading = true;
+    });
+    
     try {
       if (passwordController.text != confirmpass.text) {
         _showErrorDialog(
@@ -33,6 +41,12 @@ class _RegisterPageState extends State<RegisterPage> {
       print("User registered successfully!");
     } on FirebaseAuthException catch (e) {
       _handleFirebaseError(context, e);
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -65,9 +79,20 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _signInWithGoogle() async {
+    if (isGoogleLoading) return; // Prevent multiple clicks
+
+    setState(() {
+      isGoogleLoading = true;
+    });
+    
     try {
       GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return;
+      if (googleUser == null) {
+        setState(() {
+          isGoogleLoading = false;
+        });
+        return;
+      }
 
       GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       OAuthCredential credential = GoogleAuthProvider.credential(
@@ -81,6 +106,12 @@ class _RegisterPageState extends State<RegisterPage> {
       print("Error during Google Sign-In: $e");
       _showErrorDialog(context, "Google Sign-In Error",
           "An error occurred during Google sign-in.");
+    } finally {
+      if (mounted) {
+        setState(() {
+          isGoogleLoading = false;
+        });
+      }
     }
   }
 
@@ -213,20 +244,30 @@ class _RegisterPageState extends State<RegisterPage> {
                         FadeInUp(
                           duration: const Duration(milliseconds: 1600),
                           child: MaterialButton(
-                            onPressed: () => signUserUp(context),
+                            onPressed: isLoading ? null : () => signUserUp(context),
                             height: 50,
                             color: Colors.orange[900],
+                            disabledColor: Colors.orange[300],
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(50),
                             ),
-                            child: const Center(
-                              child: Text(
-                                "Sign Up",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            child: Center(
+                              child: isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Sign Up",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
@@ -245,20 +286,30 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: FadeInUp(
                                 duration: const Duration(milliseconds: 1800),
                                 child: MaterialButton(
-                                  onPressed: _signInWithGoogle,
+                                  onPressed: isGoogleLoading ? null : _signInWithGoogle,
                                   height: 50,
                                   color: Colors.blue,
+                                  disabledColor: Colors.blue[300],
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(50),
                                   ),
-                                  child: const Center(
-                                    child: Text(
-                                      "Google",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                  child: Center(
+                                    child: isGoogleLoading
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Text(
+                                            "Google",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                   ),
                                 ),
                               ),
