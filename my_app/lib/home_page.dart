@@ -6,13 +6,34 @@ import 'package:my_app/pages/page2.dart';
 import 'package:my_app/pages/page3.dart';
 import 'package:my_app/pages/page4.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:my_app/login_page.dart'; // Import the LoginPage
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   void signUserOut() async {
     await FirebaseAuth.instance.signOut();
     await GoogleSignIn().signOut();
+
+    // Check if the widget is still mounted before navigating
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoginPage(
+            onTap: () {
+              // Define the onTap logic for LoginPage
+              // For example, you can navigate back to the HomePage or perform other actions
+            },
+          ),
+        ),
+      );
+    }
   }
 
   void navigateToPage(BuildContext context, Widget page) {
@@ -59,7 +80,7 @@ class HomePage extends StatelessWidget {
                     FadeInRight(
                       duration: const Duration(milliseconds: 1000),
                       child: IconButton(
-                        onPressed: signUserOut,
+                        onPressed: () => signUserOut(), // Updated to use the class method without context
                         icon: const Icon(Icons.logout, color: Colors.white, size: 28),
                       ),
                     ),
