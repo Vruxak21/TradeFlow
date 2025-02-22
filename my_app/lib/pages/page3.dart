@@ -38,7 +38,8 @@ class NewsArticle {
     return NewsArticle(
       title: json['title'] ?? '',
       description: json['summary'] ?? '', // Alpha Vantage uses 'summary'
-      urlToImage: json['banner_image'] ?? null, // Alpha Vantage uses 'banner_image'
+      urlToImage:
+          json['banner_image'] ?? null, // Alpha Vantage uses 'banner_image'
       url: json['url'] ?? '',
       publishedAt: json['time_published'] ?? DateTime.now().toIso8601String(),
       source: json['source'] ?? 'Alpha Vantage',
@@ -50,7 +51,7 @@ class NewsService {
   // GNews API
   final String gNewsApiKey = '5b143a3b70f04e36c09082be5274c022';
   final String gNewsBaseUrl = 'https://gnews.io/api/v4';
-  
+
   // Alpha Vantage API
   final String alphaVantageApiKey = 'Q25GP4AZ2UK88N1L';
   final String alphaVantageBaseUrl = 'https://www.alphavantage.co';
@@ -59,21 +60,25 @@ class NewsService {
     try {
       // Fetch news from both APIs in parallel
       final List<NewsArticle> gNewsArticles = await _fetchGNewsArticles();
-      final List<NewsArticle> alphaVantageArticles = await _fetchAlphaVantageArticles();
-      
+      final List<NewsArticle> alphaVantageArticles =
+          await _fetchAlphaVantageArticles();
+
       // Combine results
-      List<NewsArticle> combinedNews = [...gNewsArticles, ...alphaVantageArticles];
-      
+      List<NewsArticle> combinedNews = [
+        ...gNewsArticles,
+        ...alphaVantageArticles
+      ];
+
       // Filter for Indian content
       List<NewsArticle> indianNews = _filterForIndianContent(combinedNews);
-      
+
       // Sort by date (newest first)
       indianNews.sort((a, b) => _parseDateTime(b.publishedAt)
           .compareTo(_parseDateTime(a.publishedAt)));
-      
+
       print("Total news articles after combining APIs: ${combinedNews.length}");
       print("Indian financial news articles: ${indianNews.length}");
-      
+
       return indianNews;
     } catch (e) {
       print("Error fetching combined news: $e");
@@ -101,7 +106,7 @@ class NewsService {
 
   Future<List<NewsArticle>> _fetchGNewsArticles() async {
     try {
-      final String url = 
+      final String url =
           '$gNewsBaseUrl/search?q=(finance OR "stock market" OR trading OR investment OR nifty OR sensex OR BSE OR NSE) india&country=in&lang=en&max=20&apikey=$gNewsApiKey';
 
       print("Fetching GNews from: $url");
@@ -114,9 +119,9 @@ class NewsService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> articles = data['articles'];
-        
+
         print("Number of GNews articles fetched: ${articles.length}");
-        
+
         return articles
             .map((article) => NewsArticle.fromJson(article))
             .toList();
@@ -133,7 +138,7 @@ class NewsService {
   Future<List<NewsArticle>> _fetchAlphaVantageArticles() async {
     try {
       // Alpha Vantage News Sentiment API
-      final String url = 
+      final String url =
           '$alphaVantageBaseUrl/query?function=NEWS_SENTIMENT&topics=financial_markets,economy_fiscal,finance,stock_market&tickers=RELIANCE.BSE,TATASTEEL.BSE,HDFCBANK.BSE&sort=RELEVANCE&limit=20&apikey=$alphaVantageApiKey';
 
       print("Fetching Alpha Vantage news from: $url");
@@ -146,14 +151,15 @@ class NewsService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> articles = data['feed'] ?? [];
-        
+
         print("Number of Alpha Vantage articles fetched: ${articles.length}");
-        
+
         return articles
             .map((article) => NewsArticle.fromAlphaVantage(article))
             .toList();
       } else {
-        print("Alpha Vantage API error: ${response.statusCode} - ${response.body}");
+        print(
+            "Alpha Vantage API error: ${response.statusCode} - ${response.body}");
         return []; // Return empty list on error
       }
     } catch (e) {
@@ -164,12 +170,11 @@ class NewsService {
 
   List<NewsArticle> _filterForIndianContent(List<NewsArticle> articles) {
     return articles.where((article) {
-      final String titleAndDesc = 
+      final String titleAndDesc =
           '${article.title.toLowerCase()} ${article.description?.toLowerCase() ?? ''}';
-      
+
       // Indian financial context keywords
-      final bool hasIndianContext = 
-          titleAndDesc.contains('india') ||
+      final bool hasIndianContext = titleAndDesc.contains('india') ||
           titleAndDesc.contains('indian') ||
           titleAndDesc.contains('nifty') ||
           titleAndDesc.contains('sensex') ||
@@ -180,10 +185,9 @@ class NewsService {
           titleAndDesc.contains('rupee') ||
           titleAndDesc.contains('mumbai') ||
           titleAndDesc.contains('delhi');
-          
+
       // Finance, trading, and stock market content
-      final bool hasFinancialContent =
-          titleAndDesc.contains('finance') ||
+      final bool hasFinancialContent = titleAndDesc.contains('finance') ||
           titleAndDesc.contains('financial') ||
           titleAndDesc.contains('bank') ||
           titleAndDesc.contains('economy') ||
@@ -195,7 +199,7 @@ class NewsService {
           titleAndDesc.contains('mutual fund') ||
           titleAndDesc.contains('bond') ||
           titleAndDesc.contains('budget');
-      
+
       return hasIndianContext && hasFinancialContent;
     }).toList();
   }
@@ -215,9 +219,14 @@ class _Page3State extends State<Page3> {
   String? _error;
   bool _showFilters = false;
   Set<String> _selectedCategories = {'All'};
-  
+
   // Category filter options
-  final List<String> _categories = ['All', 'Finance', 'Stock Market', 'Trading'];
+  final List<String> _categories = [
+    'All',
+    'Finance',
+    'Stock Market',
+    'Trading'
+  ];
 
   @override
   void initState() {
@@ -259,9 +268,10 @@ class _Page3State extends State<Page3> {
         final day = int.parse(dateStr.substring(6, 8));
         final hour = int.parse(dateStr.substring(9, 11));
         final minute = int.parse(dateStr.substring(11, 13));
-        return DateFormat('MMM d, y • h:mm a').format(DateTime(year, month, day, hour, minute));
+        return DateFormat('MMM d, y • h:mm a')
+            .format(DateTime(year, month, day, hour, minute));
       }
-      
+
       // Standard ISO format
       return DateFormat('MMM d, y • h:mm a').format(DateTime.parse(dateStr));
     } catch (e) {
@@ -295,35 +305,36 @@ class _Page3State extends State<Page3> {
 
   // Determine category based on article content
   List<String> _getArticleCategories(NewsArticle article) {
-    final String content = '${article.title.toLowerCase()} ${article.description?.toLowerCase() ?? ''}';
+    final String content =
+        '${article.title.toLowerCase()} ${article.description?.toLowerCase() ?? ''}';
     final List<String> categories = [];
-    
-    if (content.contains('finance') || 
-        content.contains('financial') || 
-        content.contains('bank') || 
+
+    if (content.contains('finance') ||
+        content.contains('financial') ||
+        content.contains('bank') ||
         content.contains('economy') ||
         content.contains('budget')) {
       categories.add('Finance');
     }
-    
-    if (content.contains('stock') || 
-        content.contains('share') || 
-        content.contains('market') || 
+
+    if (content.contains('stock') ||
+        content.contains('share') ||
+        content.contains('market') ||
         content.contains('sensex') ||
         content.contains('nifty') ||
         content.contains('bse') ||
         content.contains('nse')) {
       categories.add('Stock Market');
     }
-    
-    if (content.contains('trading') || 
-        content.contains('trader') || 
+
+    if (content.contains('trading') ||
+        content.contains('trader') ||
         content.contains('investment') ||
         content.contains('investor') ||
         content.contains('portfolio')) {
       categories.add('Trading');
     }
-    
+
     if (categories.isEmpty) {
       // Default category based on source if we can't determine from content
       if (article.source?.toLowerCase().contains('market') == true) {
@@ -334,7 +345,7 @@ class _Page3State extends State<Page3> {
         categories.add('Finance'); // Default fallback
       }
     }
-    
+
     return categories;
   }
 
@@ -343,10 +354,11 @@ class _Page3State extends State<Page3> {
     if (_selectedCategories.contains('All')) {
       return _news;
     }
-    
+
     return _news.where((article) {
       final articleCategories = _getArticleCategories(article);
-      return articleCategories.any((category) => _selectedCategories.contains(category));
+      return articleCategories
+          .any((category) => _selectedCategories.contains(category));
     }).toList();
   }
 
@@ -363,6 +375,7 @@ class _Page3State extends State<Page3> {
           children: [
             SafeArea(
               child: Container(
+                width: double.infinity,
                 decoration: BoxDecoration(
                   color: AppTheme.primary,
                   boxShadow: [
@@ -373,51 +386,62 @@ class _Page3State extends State<Page3> {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                      icon: const Icon(Icons.arrow_back,
+                          color: Colors.white, size: 24),
                     ),
-                    const Text(
-                      "Indian Financial News",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    Expanded(
+                      child: Text(
+                        "Indian Financial News",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _showFilters = !_showFilters;
-                            });
-                          },
-                          icon: Icon(
-                            _showFilters ? Icons.filter_list_off : Icons.filter_list,
-                            color: Colors.white,
-                            size: 28,
+                    FittedBox(
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _showFilters = !_showFilters;
+                              });
+                            },
+                            icon: Icon(
+                              _showFilters
+                                  ? Icons.filter_list_off
+                                  : Icons.filter_list,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          onPressed: _loadNews,
-                          icon: const Icon(Icons.refresh, color: Colors.white, size: 28),
-                        ),
-                      ],
+                          IconButton(
+                            onPressed: _loadNews,
+                            icon: const Icon(Icons.refresh,
+                                color: Colors.white, size: 24),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
+
             // Filter chips section
             if (_showFilters)
               Container(
                 color: Colors.grey.shade100,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 child: Wrap(
                   spacing: 8,
                   children: _categories.map((category) {
@@ -436,7 +460,8 @@ class _Page3State extends State<Page3> {
                             _selectedCategories.remove('All');
                             if (selected) {
                               _selectedCategories.add(category);
-                              if (_selectedCategories.length == _categories.length - 1) {
+                              if (_selectedCategories.length ==
+                                  _categories.length - 1) {
                                 _selectedCategories = {'All'};
                               }
                             } else {
@@ -502,7 +527,8 @@ class _Page3State extends State<Page3> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -515,7 +541,7 @@ class _Page3State extends State<Page3> {
     }
 
     final filteredNews = _getFilteredNews();
-    
+
     if (filteredNews.isEmpty) {
       return Center(
         child: Column(
@@ -539,7 +565,8 @@ class _Page3State extends State<Page3> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -553,14 +580,14 @@ class _Page3State extends State<Page3> {
     return RefreshIndicator(
       onRefresh: _loadNews,
       color: AppTheme.primary,
-            child: ListView.builder(
+      child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: filteredNews.length,
         itemBuilder: (context, index) {
           final article = filteredNews[index];
           final categories = _getArticleCategories(article);
-          
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 20),
             child: Material(
@@ -659,7 +686,7 @@ class _Page3State extends State<Page3> {
                                 } else {
                                   tagColor = Colors.orange.shade100;
                                 }
-                                
+
                                 return Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
