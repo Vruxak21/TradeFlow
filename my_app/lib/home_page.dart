@@ -17,22 +17,23 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   void signUserOut() async {
-    await FirebaseAuth.instance.signOut();
-    await GoogleSignIn().signOut();
+    try {
+      await FirebaseAuth.instance.signOut();
+      await GoogleSignIn().signOut();
 
-    // Check if the widget is still mounted before navigating
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => LoginPage(
-            onTap: () {
-              // Define the onTap logic for LoginPage
-              // For example, you can navigate back to the HomePage or perform other actions
-            },
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LoginPage(
+              onTap: () {},
+            ),
           ),
-        ),
-      );
+          (route) => false, // Removes all previous routes
+        );
+      }
+    } catch (e) {
+      print("Error signing out: $e");
     }
   }
 
@@ -62,7 +63,8 @@ class _HomePageState extends State<HomePage> {
           children: [
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -80,8 +82,10 @@ class _HomePageState extends State<HomePage> {
                     FadeInRight(
                       duration: const Duration(milliseconds: 1000),
                       child: IconButton(
-                        onPressed: () => signUserOut(), // Updated to use the class method without context
-                        icon: const Icon(Icons.logout, color: Colors.white, size: 28),
+                        onPressed: () =>
+                            signUserOut(), // Updated to use the class method without context
+                        icon: const Icon(Icons.logout,
+                            color: Colors.white, size: 28),
                       ),
                     ),
                   ],
@@ -99,7 +103,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

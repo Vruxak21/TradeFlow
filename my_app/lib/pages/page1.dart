@@ -4,8 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:animate_do/animate_do.dart';
 import 'dart:convert';
 
-const String apiKey = "AIzaSyCT0EJjWwCmUiikcNuFLzC-IKqyvtFObzg";
-const String apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const String apiKey = "AIzaSyCAw_pSCrt16IpRT2kDh_GpOflUGzuzkpE";
+
+const String apiUrl =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
 
 class AppTheme {
   static const primary = Color(0xFFE65100);
@@ -32,11 +34,14 @@ class _Page1State extends State<Page1> {
 
   final Map<String, String> _greetings = {
     'hi': 'Hey! How can I help you with your financial questions today?',
-    'hello': 'Hello! I\'m here to assist you with financial and investment related queries.',
+    'hello':
+        'Hello! I\'m here to assist you with financial and investment related queries.',
     'hey': 'Hi there! Need help with stocks or investments?',
     'good morning': 'Good morning! Ready to discuss your financial queries?',
-    'good afternoon': 'Good afternoon! How can I assist you with financial matters?',
-    'good evening': 'Good evening! Let me help you with your financial questions.',
+    'good afternoon':
+        'Good afternoon! How can I assist you with financial matters?',
+    'good evening':
+        'Good evening! Let me help you with your financial questions.',
   };
 
   Future<void> _sendMessage() async {
@@ -45,7 +50,8 @@ class _Page1State extends State<Page1> {
 
     setState(() {
       _messages.add({"sender": "user", "text": _controller.text});
-      _messages.add({"sender": "bot", "text": "typing..."}); // Changed to "typing..."
+      _messages.add(
+          {"sender": "bot", "text": "typing..."}); // Changed to "typing..."
       _isLoading = true;
     });
 
@@ -78,24 +84,23 @@ class _Page1State extends State<Page1> {
     }
 
     // Check for farewells
-    if (message.contains('bye') || 
-        message.contains('goodbye') || 
+    if (message.contains('bye') ||
+        message.contains('goodbye') ||
         message.contains('thank you')) {
       return "Goodbye! Feel free to return if you have more financial questions!";
     }
 
     // Check for "explain in detail" type requests
-    bool isDetailRequest = message.contains('explain in detail') || 
-                         message.contains('tell me more') || 
-                         message.contains('elaborate') ||
-                         message.contains('can you explain') ||
-                         message.contains('what does this mean');
+    bool isDetailRequest = message.contains('explain in detail') ||
+        message.contains('tell me more') ||
+        message.contains('elaborate') ||
+        message.contains('can you explain') ||
+        message.contains('what does this mean');
 
     if (isDetailRequest && _lastFinancialTopic.isNotEmpty) {
       return await _fetchGeminiResponse(
-        "Explain in detail about $_lastFinancialTopic. Provide comprehensive information including examples and key points.",
-        detailed: true
-      );
+          "Explain in detail about $_lastFinancialTopic. Provide comprehensive information including examples and key points.",
+          detailed: true);
     }
 
     // Regular message handling
@@ -106,7 +111,8 @@ class _Page1State extends State<Page1> {
     return response;
   }
 
-  Future<String> _fetchGeminiResponse(String query, {bool detailed = false}) async {
+  Future<String> _fetchGeminiResponse(String query,
+      {bool detailed = false}) async {
     try {
       String prompt = detailed
           ? """
@@ -130,11 +136,13 @@ class _Page1State extends State<Page1> {
         Uri.parse("$apiUrl?key=$apiKey"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "contents": [{
-            "parts": [{
-              "text": prompt
-            }]
-          }],
+          "contents": [
+            {
+              "parts": [
+                {"text": prompt}
+              ]
+            }
+          ],
           "generationConfig": {
             "temperature": detailed ? 0.7 : 0.3,
             "maxOutputTokens": detailed ? 800 : 400,
@@ -144,12 +152,14 @@ class _Page1State extends State<Page1> {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        final text = jsonResponse['candidates']?[0]['content']['parts']?[0]['text'] ?? '';
-        
+        final text = jsonResponse['candidates']?[0]['content']['parts']?[0]
+                ['text'] ??
+            '';
+
         if (text.trim() == "IGNORE") {
           return "I can only help with financial topics. Please ask about investments, stocks, or other finance-related questions.";
         }
-        
+
         return _formatResponse(text);
       }
       return "I'm having trouble connecting right now. Please try again.";
@@ -203,7 +213,8 @@ class _Page1State extends State<Page1> {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
@@ -211,7 +222,8 @@ class _Page1State extends State<Page1> {
                       alignment: Alignment.centerLeft,
                       child: IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                        icon: const Icon(Icons.arrow_back,
+                            color: Colors.white, size: 28),
                       ),
                     ),
                     const Text(
@@ -239,7 +251,8 @@ class _Page1State extends State<Page1> {
                   return FadeIn(
                     duration: const Duration(milliseconds: 200),
                     child: Align(
-                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment:
+                          isUser ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
                         constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.8,
