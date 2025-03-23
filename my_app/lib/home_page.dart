@@ -1,12 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:my_app/pages/page1.dart';
-import 'package:my_app/pages/page2.dart';
-import 'package:my_app/pages/page3.dart';
-import 'package:my_app/pages/page4.dart';
-import 'package:animate_do/animate_do.dart';
-import 'package:my_app/login_page.dart'; // Import the LoginPage
+import 'package:TradeFlow/pages/page1.dart';
+import 'package:TradeFlow/pages/page2.dart';
+import 'package:TradeFlow/pages/page3.dart';
+import 'package:TradeFlow/pages/page4.dart';
+import 'package:TradeFlow/login_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,6 +15,32 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+  
+  // List of pages to display
+  final List<Widget> _pages = [
+    Page1(),
+    const Page2(),
+    const Page3(),
+    const Page4(),
+  ];
+  
+  // Titles for each page
+  final List<String> _titles = [
+    "Financial Chatbot",
+    "AI Investment Picks",
+    "Market Trends & Insights",
+    "Coming Soon..."
+  ];
+  
+  // Icons for each page
+  final List<IconData> _icons = [
+    Icons.smart_toy,
+    Icons.auto_graph,
+    Icons.trending_up,
+    Icons.more_horiz,
+  ];
+
   void signUserOut() async {
     try {
       await FirebaseAuth.instance.signOut();
@@ -37,187 +62,66 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void navigateToPage(BuildContext context, Widget page) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => page),
-    );
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            colors: [
-              Colors.orange.shade900,
-              Colors.orange.shade800,
-              Colors.orange.shade400,
-            ],
+      appBar: AppBar(
+        title: Text(
+          _titles[_selectedIndex],
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
-        child: Column(
-          children: [
-            SafeArea(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    FadeInLeft(
-                      duration: const Duration(milliseconds: 1000),
-                      child: const Text(
-                        "Services",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    FadeInRight(
-                      duration: const Duration(milliseconds: 1000),
-                      child: IconButton(
-                        onPressed: () =>
-                            signUserOut(), // Updated to use the class method without context
-                        icon: const Icon(Icons.logout,
-                            color: Colors.white, size: 28),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(60),
-                    topRight: Radius.circular(60),
-                  ),
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 30),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Column(
-                            children: [
-                              FadeInUp(
-                                duration: const Duration(milliseconds: 1200),
-                                child: buildOptionContainer(
-                                  context,
-                                  "Financial Chatbot",
-                                  Page1(),
-                                  Icons.smart_toy,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              FadeInUp(
-                                duration: const Duration(milliseconds: 1400),
-                                child: buildOptionContainer(
-                                  context,
-                                  "AI Investment Picks",
-                                  const Page2(),
-                                  Icons.auto_graph,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              FadeInUp(
-                                duration: const Duration(milliseconds: 1600),
-                                child: buildOptionContainer(
-                                  context,
-                                  "Market Trends & Insights",
-                                  const Page3(),
-                                  Icons.trending_up,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              FadeInUp(
-                                duration: const Duration(milliseconds: 1800),
-                                child: buildOptionContainer(
-                                  context,
-                                  "Coming Soon...",
-                                  const Page4(),
-                                  Icons.more_horiz,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        backgroundColor: Colors.orange.shade800,
+        elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: signUserOut,
+            icon: const Icon(Icons.logout, color: Colors.white),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget buildOptionContainer(
-      BuildContext context, String title, Widget page, IconData icon) {
-    return GestureDetector(
-      onTap: () => navigateToPage(context, page),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 20),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.orange.withOpacity(0.1),
-              blurRadius: 20,
-              spreadRadius: 2,
-              offset: const Offset(0, 10),
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 0,
+              blurRadius: 10,
+              offset: const Offset(0, -3),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: Colors.orange.shade900,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: BottomNavigationBar(
+            items: List.generate(
+              _icons.length,
+              (index) => BottomNavigationBarItem(
+                icon: Icon(_icons[index]),
+                label: '', // Empty label to show only icons
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.orange.shade900,
-              size: 20,
-            ),
-          ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.orange.shade900,
+            unselectedItemColor: Colors.grey,
+            onTap: _onItemTapped,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            showSelectedLabels: false, // Hide selected labels
+            showUnselectedLabels: false, // Hide unselected labels
+          ),
         ),
       ),
     );

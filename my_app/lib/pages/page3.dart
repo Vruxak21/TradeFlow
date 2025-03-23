@@ -373,68 +373,7 @@ class _Page3State extends State<Page3> {
         backgroundColor: Colors.grey.shade100,
         body: Column(
           children: [
-            SafeArea(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back,
-                          color: Colors.white, size: 24),
-                    ),
-                    Expanded(
-                      child: Text(
-                        "Indian Financial News",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    FittedBox(
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              setState(() {
-                                _showFilters = !_showFilters;
-                              });
-                            },
-                            icon: Icon(
-                              _showFilters
-                                  ? Icons.filter_list_off
-                                  : Icons.filter_list,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: _loadNews,
-                            icon: const Icon(Icons.refresh,
-                                color: Colors.white, size: 24),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            
 
             // Filter chips section
             if (_showFilters)

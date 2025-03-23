@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/auth_page.dart';
+import 'package:TradeFlow/auth_page.dart';
 import '/login_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';

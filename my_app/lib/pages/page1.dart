@@ -201,43 +201,7 @@ class _Page1State extends State<Page1> {
       child: Scaffold(
         body: Column(
           children: [
-            SafeArea(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.primary,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back,
-                            color: Colors.white, size: 28),
-                      ),
-                    ),
-                    const Text(
-                      "Financial Chatbot",
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
