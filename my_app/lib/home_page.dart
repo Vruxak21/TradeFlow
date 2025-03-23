@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage> {
     "Financial Chatbot",
     "AI Investment Picks",
     "Market Trends & Insights",
-    "Coming Soon..."
+    "SRI Model"
   ];
   
   // Icons for each page
