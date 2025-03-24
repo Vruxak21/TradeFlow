@@ -1,142 +1,221 @@
 from flask import Flask, jsonify, request
-import requests
-import base64
-import io
-import matplotlib
-matplotlib.use('Agg')  # Non-interactive backend
-import matplotlib.pyplot as plt
-import time
+from flask_cors import CORS
+import yfinance as yf
 import pandas as pd
-from datetime import datetime
-import random
-import numpy as np
-import yfinance as yf  # Import yfinance
+import matplotlib
+# Set matplotlib to use 'Agg' backend (non-interactive, thread-safe)
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import io
+import base64
+import time
+import logging
+from threading import Lock
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-# Predefined list of Indian stock tickers for each category
-STATIC_STOCKS = {
-    "Technology": [
-        "TCS.NS", "INFY.NS", "HCLTECH.NS", "WIPRO.NS", "TECHM.NS",
-        "LTIM.NS", "MPHASIS.NS", "COFORGE.NS", "ZENSARTECH.NS", "MINDTREE.NS"
+# Create a lock for thread-safe chart generation
+chart_lock = Lock()
+
+# Define stock categories and their tickers (BSE and NSE stocks)
+# Updated ticker symbols to ensure they're all valid
+STOCK_CATEGORIES = {
+    'Technology': [
+        {'ticker': 'TCS.NS', 'name': 'Tata Consultancy Services', 'sector': 'Technology', 'industry': 'IT Services'},
+        {'ticker': 'INFY.NS', 'name': 'Infosys Ltd', 'sector': 'Technology', 'industry': 'IT Services'},
+        {'ticker': 'WIPRO.NS', 'name': 'Wipro Ltd', 'sector': 'Technology', 'industry': 'IT Services'},
+        {'ticker': 'HCLTECH.NS', 'name': 'HCL Technologies', 'sector': 'Technology', 'industry': 'IT Services'},
+        {'ticker': 'TECHM.NS', 'name': 'Tech Mahindra', 'sector': 'Technology', 'industry': 'IT Services'}
     ],
-    "Defence": [
-        "HAL.NS", "BEL.NS", "BEML.NS", "MIDHANI.NS", "L&T.NS",
-        "GRSE.NS", "GSL.NS", "MDL.NS", "AVNL.NS", "BHEL.NS"
+    'Defence': [
+        {'ticker': 'HAL.NS', 'name': 'Hindustan Aeronautics Ltd', 'sector': 'Defence', 'industry': 'Aerospace'},
+        {'ticker': 'BEL.NS', 'name': 'Bharat Electronics Ltd', 'sector': 'Defence', 'industry': 'Electronic Systems'},
+        {'ticker': 'BEML.NS', 'name': 'BEML Limited', 'sector': 'Defence', 'industry': 'Heavy Engineering'},
+        {'ticker': 'COCHINSHIP.NS', 'name': 'Cochin Shipyard', 'sector': 'Defence', 'industry': 'Shipbuilding'},
+        {'ticker': 'DATAPATTNS.NS', 'name': 'Data Patterns India', 'sector': 'Defence', 'industry': 'Electronics'} # Fixed ticker
     ],
-    "Environment": [
-        "NTPC.NS", "TATAPOWER.NS", "JSWENERGY.NS", "ADANIGREEN.NS", "SJVN.NS",
-        "NHPC.NS", "POWERGRID.NS", "TATASTEEL.NS", "JSWSTEEL.NS", "SAIL.NS"
+    'Environment': [
+        {'ticker': 'SUZLON.NS', 'name': 'Suzlon Energy', 'sector': 'Environment', 'industry': 'Renewable Energy'},
+        {'ticker': 'TATAPOWER.NS', 'name': 'Tata Power', 'sector': 'Environment', 'industry': 'Power Generation'},
+        {'ticker': 'ADANIGREEN.NS', 'name': 'Adani Green Energy', 'sector': 'Environment', 'industry': 'Renewable Energy'},
+        {'ticker': 'NTPC.NS', 'name': 'NTPC Ltd', 'sector': 'Environment', 'industry': 'Power Generation'},
+        {'ticker': 'JSWENERGY.NS', 'name': 'JSW Energy', 'sector': 'Environment', 'industry': 'Renewable Energy'} # Replaced INOXWIND with a more reliable ticker
     ],
-    "Financial": [
-        "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "KOTAKBANK.NS", "AXISBANK.NS",
-        "BAJFINANCE.NS", "BAJAJFINSV.NS", "INDUSINDBK.NS", "PNB.NS", "BANDHANBNK.NS"
-    ],
-    "Energy": [
-        "RELIANCE.NS", "ONGC.NS", "IOC.NS", "BPCL.NS", "HPCL.NS",
-        "GAIL.NS", "OIL.NS", "PETRONET.NS", "ADANIGAS.NS", "GUJGASLTD.NS"
-    ],
-    "Consumer": [
-        "HINDUNILVR.NS", "ITC.NS", "TITAN.NS", "ASIANPAINT.NS", "MARUTI.NS",
-        "BRITANNIA.NS", "DABUR.NS", "NESTLEIND.NS", "GODREJCP.NS", "UBL.NS"
-    ]
 }
 
-# Function to fetch real-time price and metadata for a stock
-def get_real_time_data(ticker):
+def generate_stock_chart(ticker, period='1mo'):
+    """Generate a price chart for a given stock ticker and return as base64 encoded string"""
+    try:
+        # Get historical data
+        stock = yf.Ticker(ticker)
+        history = stock.history(period=period)
+        
+        # If we have data, create the chart
+        if not history.empty:
+            # Use lock to prevent thread-related issues
+            with chart_lock:
+                plt.figure(figsize=(8, 4))
+                plt.plot(history.index, history['Close'], color='#E65100')  # Using app primary color
+                plt.fill_between(history.index, history['Close'], alpha=0.2, color='#EF6C00')  # Using app secondary color
+                plt.grid(True, alpha=0.3)
+                plt.xticks(rotation=45)
+                plt.tight_layout()
+                
+                # Save plot to a bytes buffer
+                buffer = io.BytesIO()
+                plt.savefig(buffer, format='png')
+                plt.close()  # Close the figure to prevent memory leaks
+                buffer.seek(0)
+                
+                # Encode the image to base64
+                image_png = buffer.getvalue()
+                buffer.close()
+                
+                encoded_string = base64.b64encode(image_png).decode('utf-8')
+                return encoded_string
+        else:
+            logger.warning(f"No historical data available for {ticker}")
+            return None
+    except Exception as e:
+        logger.error(f"Error generating chart for {ticker}: {str(e)}")
+        return None
+
+def get_stock_data(ticker):
+    """Get current stock data for a given ticker with better error handling"""
     try:
         stock = yf.Ticker(ticker)
-        info = stock.info
+        
+        # Try to get some basic info first to check if the ticker is valid
+        info = {}
+        try:
+            info = stock.fast_info
+            if hasattr(info, 'last_price') and info.last_price is not None:
+                return info.last_price
+        except:
+            pass
+            
+        # Fall back to the full info if fast_info doesn't work
+        try:
+            info = stock.info
+        except:
+            # If we can't get info, try to get the last closing price from history
+            history = stock.history(period="1d")
+            if not history.empty and 'Close' in history.columns:
+                return history['Close'].iloc[-1]
+            return 0.0
+        
+        # Check if we have price data in various fields
+        if 'regularMarketPrice' in info and info['regularMarketPrice'] is not None:
+            return info['regularMarketPrice']
+        elif 'currentPrice' in info and info['currentPrice'] is not None:
+            return info['currentPrice']
+        elif 'previousClose' in info and info['previousClose'] is not None:
+            return info['previousClose']
+        else:
+            # Last resort: try to get the price from history
+            history = stock.history(period="1d")
+            if not history.empty and 'Close' in history.columns:
+                return history['Close'].iloc[-1]
+            
+            logger.warning(f"No price data available for {ticker}")
+            return 0.0
+    except Exception as e:
+        logger.error(f"Error fetching data for {ticker}: {str(e)}")
+        return 0.0
+
+def get_fallback_data(ticker_info):
+    """Generate fallback data when a stock can't be fetched"""
+    try:
+        # Create a minimal stock object with the info we have
         return {
-            'ticker': ticker,
-            'name': info.get('longName', ticker),
-            'price': info.get('currentPrice', 0),
-            'sector': info.get('sector', 'Unknown'),
-            'industry': info.get('industry', 'Unknown'),
-            'marketCap': info.get('marketCap', 0)
+            'ticker': ticker_info['ticker'],
+            'name': ticker_info['name'],
+            'price': 0.0,  # Placeholder price
+            'sector': ticker_info['sector'],
+            'industry': ticker_info['industry'],
+            'chart': None,  # No chart available
+            'error': 'Data unavailable'
         }
     except Exception as e:
-        print(f"Error fetching data for {ticker}: {e}")
+        logger.error(f"Error creating fallback data: {str(e)}")
         return None
 
-# Function to generate stock graph as base64 image
-def generate_stock_graph(ticker):
-    try:
-        stock = yf.Ticker(ticker)
-        history = stock.history(period="1y")  # Fetch 1 year of historical data
-        
-        if history.empty:
-            raise ValueError("No historical data available")
-        
-        plt.figure(figsize=(10, 5))
-        plt.plot(history['Close'], label=ticker)
-        plt.title(f"{ticker} - Historical Price Chart")
-        plt.xlabel("Date")
-        plt.ylabel("Price (₹)")
-        plt.legend()
-        plt.grid()
-        
-        # Save plot to a bytes buffer
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        plt.close()
-        buf.seek(0)
-        
-        # Convert to base64 string
-        image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-        return image_base64
-    except Exception as e:
-        print(f"Error generating graph for {ticker}: {e}")
-        return None
-
-# Function to sort and filter stocks by category
-def sort_and_filter_stocks(category, order="A"):
-    # Get static stocks for the selected category
-    tickers = STATIC_STOCKS.get(category, [])
-    stocks_data = []
-
-    # Fetch real-time data for all tickers
-    for ticker in tickers:
-        stock_data = get_real_time_data(ticker)
-        if stock_data:
-            stocks_data.append(stock_data)
-
-    # Sort stocks by price
-    if order.upper() == "A":
-        sorted_stocks = sorted(stocks_data, key=lambda x: x['price'])  # Ascending
-    else:
-        sorted_stocks = sorted(stocks_data, key=lambda x: x['price'], reverse=True)  # Descending
-    
-    # Return top 10 stocks
-    return sorted_stocks[:10]
-
-@app.route('/stocks/<category>')
-def get_stocks_by_category(category):
-    # Get sorting order from query parameter, default to ascending
-    order = request.args.get('order', 'A')
-    
-    # Get stocks data
-    stocks = sort_and_filter_stocks(category, order)
-    
-    # If no stocks found, return empty array
-    if not stocks:
-        return jsonify({"error": "No stocks found in this category", "stocks": []})
-    
-    # Enhance stocks data with chart
-    for stock in stocks:
-        stock['chart'] = generate_stock_graph(stock['ticker'])
-    
-    return jsonify({"stocks": stocks})
-
-@app.route('/categories')
-def get_categories():
-    return jsonify({
-        "categories": list(STATIC_STOCKS.keys())
-    })
-
-@app.route('/health')
+@app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({"status": "healthy"})
+    """Health check endpoint to verify server is running"""
+    return jsonify({'status': 'healthy', 'timestamp': time.time()})
+
+@app.route('/stocks/<category>', methods=['GET'])
+def get_stocks_by_category(category):
+    """Get stocks by category with optional sorting by price"""
+    try:
+        # Check if the category exists
+        if category not in STOCK_CATEGORIES:
+            return jsonify({"error": f"Category '{category}' not found"}), 404
+        
+        # Get sort order from query parameter (A for ascending, D for descending)
+        sort_order = request.args.get('order', 'A')
+        
+        # Get stocks for the selected category
+        stocks = []
+        
+        for stock_info in STOCK_CATEGORIES[category]:
+            ticker = stock_info['ticker']
+            
+            try:
+                # Get current price
+                price = get_stock_data(ticker)
+                
+                # Generate chart
+                chart = generate_stock_chart(ticker)
+                
+                # Create stock object
+                stock = {
+                    'ticker': ticker,
+                    'name': stock_info['name'],
+                    'price': price,
+                    'sector': stock_info['sector'],
+                    'industry': stock_info['industry'],
+                    'chart': chart
+                }
+                
+                stocks.append(stock)
+            except Exception as e:
+                logger.error(f"Error processing stock {ticker}: {str(e)}")
+                # Add fallback data
+                fallback = get_fallback_data(stock_info)
+                if fallback:
+                    stocks.append(fallback)
+        
+        # Sort stocks by price (handle 0 values appropriately)
+        stocks.sort(key=lambda x: x['price'] if x['price'] > 0 else float('inf'), reverse=(sort_order == 'D'))
+        
+        return jsonify(stocks)
+    
+    except Exception as e:
+        logger.error(f"Error processing request: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Add instructions for users
+    print("=" * 80)
+    print("Stock API Server")
+    print("=" * 80)
+    print("Make sure you have the required packages installed:")
+    print("  pip install flask flask-cors yfinance pandas matplotlib")
+    print("\nThe server will run on http://localhost:5000")
+    print("Endpoints:")
+    print("  - /health - Health check endpoint")
+    print("  - /stocks/<category>?order=A|D - Get stocks by category with optional sorting")
+    print("\nAvailable categories:")
+    for category in STOCK_CATEGORIES:
+        print(f"  - {category}")
+    print("=" * 80)
+    
+    # Run the app
+    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)

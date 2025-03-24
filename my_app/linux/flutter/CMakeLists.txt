@@ -4,6 +4,13 @@ cmake_minimum_required(VERSION 3.10)
 set(EPHEMERAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ephemeral")
 
 # Configuration provided via flutter tool.
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${EPHEMERAL_DIR}
+)
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E touch ${EPHEMERAL_DIR}/generated_config.cmake
+)
+
 include(${EPHEMERAL_DIR}/generated_config.cmake)
 
 # TODO: Move the rest of this into files in ephemeral. See
