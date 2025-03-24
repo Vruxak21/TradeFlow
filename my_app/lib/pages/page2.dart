@@ -1,24 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:TradeFlow/services/api_service.dart';
+import 'package:TradeFlow/pages/results_page.dart';
 
 class AppTheme {
   static const primary = Color(0xFFE65100);
   static const accent = Color(0xFFFFA726);
   static final background = Colors.orange.shade50;
   static const cardLight = Colors.white;
-}
-
-void main() {
-  runApp(MaterialApp(
-    title: "Investment Form",
-    theme: ThemeData(
-      primaryColor: AppTheme.primary,
-      colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.deepOrange)
-          .copyWith(secondary: AppTheme.accent),
-      scaffoldBackgroundColor: AppTheme.background,
-    ),
-    home: const Page2(),
-  ));
 }
 
 class Page2 extends StatefulWidget {
@@ -40,6 +29,9 @@ class _Page2State extends State<Page2> {
   String? _preferredSector;
   String? _marketCap;
   String? _highDividend;
+
+  // Processing state
+  bool _isProcessing = false;
 
   // Options for MCQs
   final List<String> _riskOptions = ['low', 'medium', 'high'];
@@ -108,8 +100,8 @@ class _Page2State extends State<Page2> {
     );
   }
 
-  /// Collects all form data and prints it (or sends it to your backend).
-  void _submitForm() {
+  /// Validates form data and submits it to the backend
+  void _submitForm() async {
     if (_riskAppetite != null &&
         _investmentGoal != null &&
         _preferredSector != null &&
@@ -118,6 +110,8 @@ class _Page2State extends State<Page2> {
         _incomeController.text.isNotEmpty &&
         _horizonController.text.isNotEmpty &&
         _amountController.text.isNotEmpty) {
+      
+      // Prepare form data
       Map<String, dynamic> formData = {
         "riskAppetite": _riskAppetite,
         "annualIncome": _incomeController.text,
@@ -128,17 +122,53 @@ class _Page2State extends State<Page2> {
         "highDividend": _highDividend,
         "investmentAmount": _amountController.text,
       };
-      print("Form Data: $formData");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text("Data submitted successfully!"),
-        backgroundColor: AppTheme.primary,
-      ));
+      
+      // Set processing state
+      setState(() {
+        _isProcessing = true;
+      });
+      
+      try {
+        // Call API
+        final result = await ApiService.getRecommendations(formData);
+        
+        // Reset processing state
+        setState(() {
+          _isProcessing = false;
+        });
+        
+        if (result['status'] == 'success') {
+          // Navigate to results page
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResultsPage(
+                recommendations: result['recommendations'],
+                userInput: formData,
+              ),
+            ),
+          );
+        } else {
+          // Show error
+          _showErrorSnackBar(result['message'] ?? 'Failed to get recommendations');
+        }
+      } catch (e) {
+        // Reset processing state and show error
+        setState(() {
+          _isProcessing = false;
+        });
+        _showErrorSnackBar('Error: ${e.toString()}');
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text("Please fill in all fields."),
-        backgroundColor: Colors.redAccent,
-      ));
+      _showErrorSnackBar('Please fill in all fields');
     }
+  }
+  
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.redAccent,
+    ));
   }
 
   @override
@@ -152,54 +182,72 @@ class _Page2State extends State<Page2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // No AppBar as per your request.
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        child: Column(
-          children: [
-            // Text fields for numeric inputs
-            _buildTextFieldCard("Enter your annual income (in INR)", _incomeController),
-            _buildTextFieldCard("Enter your investment horizon (years)", _horizonController),
-            _buildTextFieldCard("Enter the amount you want to invest (in INR)", _amountController),
-            // MCQs for options
-            _buildMCQCard("Enter your risk appetite:", _riskOptions, _riskAppetite, (value) {
-              setState(() {
-                _riskAppetite = value;
-              });
-            }),
-            _buildMCQCard("Enter your investment goal:", _goalOptions, _investmentGoal, (value) {
-              setState(() {
-                _investmentGoal = value;
-              });
-            }),
-            _buildMCQCard("Enter your preferred sector:", _sectorOptions, _preferredSector, (value) {
-              setState(() {
-                _preferredSector = value;
-              });
-            }),
-            _buildMCQCard("Enter your market cap preference:", _marketCapOptions, _marketCap, (value) {
-              setState(() {
-                _marketCap = value;
-              });
-            }),
-            _buildMCQCard("Do you prefer high-dividend stocks?", _dividendOptions, _highDividend, (value) {
-              setState(() {
-                _highDividend = value;
-              });
-            }),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              onPressed: _submitForm,
-              child: const Text("Submit",style: TextStyle(color: Colors.white),),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            child: Column(
+              children: [
+                // Text fields for numeric inputs
+                _buildTextFieldCard("Enter your annual income (in INR)", _incomeController),
+                _buildTextFieldCard("Enter your investment horizon (years)", _horizonController),
+                _buildTextFieldCard("Enter the amount you want to invest (in INR)", _amountController),
+                
+                // MCQs for options
+                _buildMCQCard("Enter your risk appetite:", _riskOptions, _riskAppetite, (value) {
+                  setState(() {
+                    _riskAppetite = value;
+                  });
+                }),
+                _buildMCQCard("Enter your investment goal:", _goalOptions, _investmentGoal, (value) {
+                  setState(() {
+                    _investmentGoal = value;
+                  });
+                }),
+                _buildMCQCard("Enter your preferred sector:", _sectorOptions, _preferredSector, (value) {
+                  setState(() {
+                    _preferredSector = value;
+                  });
+                }),
+                _buildMCQCard("Enter your market cap preference:", _marketCapOptions, _marketCap, (value) {
+                  setState(() {
+                    _marketCap = value;
+                  });
+                }),
+                _buildMCQCard("Do you prefer high-dividend stocks?", _dividendOptions, _highDividend, (value) {
+                  setState(() {
+                    _highDividend = value;
+                  });
+                }),
+                
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: _isProcessing ? null : _submitForm,
+                  child: const Text("Get Recommendations", style: TextStyle(color: Colors.white)),
+                ),
+                
+                const SizedBox(height: 20),
+              ],
             ),
-          ],
-        ),
+          ),
+          
+          // Loading indicator
+          if (_isProcessing)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: AppTheme.primary,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

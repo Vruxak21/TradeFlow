@@ -31,8 +31,7 @@ class Stock {
 }
 
 class StockService {
-  // Change this to your actual server IP when testing with emulator
-  // Use 10.0.2.2 to access localhost from Android emulator
+  // Use port 5000 for stock data
   static const String baseUrl = 'http://10.0.2.2:5000';
 
   Future<List<Stock>> getStocksByCategory(String category, {String order = 'A'}) async {

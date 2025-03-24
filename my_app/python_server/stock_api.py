@@ -10,20 +10,12 @@ import io
 import base64
 import time
 import logging
-from threading import Lock
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
-
-# Create a lock for thread-safe chart generation
-chart_lock = Lock()
-
 # Define stock categories and their tickers (BSE and NSE stocks)
-# Updated ticker symbols to ensure they're all valid
 STOCK_CATEGORIES = {
     'Technology': [
         {'ticker': 'TCS.NS', 'name': 'Tata Consultancy Services', 'sector': 'Technology', 'industry': 'IT Services'},
@@ -37,14 +29,14 @@ STOCK_CATEGORIES = {
         {'ticker': 'BEL.NS', 'name': 'Bharat Electronics Ltd', 'sector': 'Defence', 'industry': 'Electronic Systems'},
         {'ticker': 'BEML.NS', 'name': 'BEML Limited', 'sector': 'Defence', 'industry': 'Heavy Engineering'},
         {'ticker': 'COCHINSHIP.NS', 'name': 'Cochin Shipyard', 'sector': 'Defence', 'industry': 'Shipbuilding'},
-        {'ticker': 'DATAPATTNS.NS', 'name': 'Data Patterns India', 'sector': 'Defence', 'industry': 'Electronics'} # Fixed ticker
+        {'ticker': 'DATAPATTNS.NS', 'name': 'Data Patterns India', 'sector': 'Defence', 'industry': 'Electronics'}
     ],
     'Environment': [
         {'ticker': 'SUZLON.NS', 'name': 'Suzlon Energy', 'sector': 'Environment', 'industry': 'Renewable Energy'},
         {'ticker': 'TATAPOWER.NS', 'name': 'Tata Power', 'sector': 'Environment', 'industry': 'Power Generation'},
         {'ticker': 'ADANIGREEN.NS', 'name': 'Adani Green Energy', 'sector': 'Environment', 'industry': 'Renewable Energy'},
         {'ticker': 'NTPC.NS', 'name': 'NTPC Ltd', 'sector': 'Environment', 'industry': 'Power Generation'},
-        {'ticker': 'JSWENERGY.NS', 'name': 'JSW Energy', 'sector': 'Environment', 'industry': 'Renewable Energy'} # Replaced INOXWIND with a more reliable ticker
+        {'ticker': 'JSWENERGY.NS', 'name': 'JSW Energy', 'sector': 'Environment', 'industry': 'Renewable Energy'}
     ],
 }
 
@@ -57,27 +49,25 @@ def generate_stock_chart(ticker, period='1mo'):
         
         # If we have data, create the chart
         if not history.empty:
-            # Use lock to prevent thread-related issues
-            with chart_lock:
-                plt.figure(figsize=(8, 4))
-                plt.plot(history.index, history['Close'], color='#E65100')  # Using app primary color
-                plt.fill_between(history.index, history['Close'], alpha=0.2, color='#EF6C00')  # Using app secondary color
-                plt.grid(True, alpha=0.3)
-                plt.xticks(rotation=45)
-                plt.tight_layout()
-                
-                # Save plot to a bytes buffer
-                buffer = io.BytesIO()
-                plt.savefig(buffer, format='png')
-                plt.close()  # Close the figure to prevent memory leaks
-                buffer.seek(0)
-                
-                # Encode the image to base64
-                image_png = buffer.getvalue()
-                buffer.close()
-                
-                encoded_string = base64.b64encode(image_png).decode('utf-8')
-                return encoded_string
+            plt.figure(figsize=(8, 4))
+            plt.plot(history.index, history['Close'], color='#E65100')  # Using app primary color
+            plt.fill_between(history.index, history['Close'], alpha=0.2, color='#EF6C00')  # Using app secondary color
+            plt.grid(True, alpha=0.3)
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            
+            # Save plot to a bytes buffer
+            buffer = io.BytesIO()
+            plt.savefig(buffer, format='png')
+            plt.close()  # Close the figure to prevent memory leaks
+            buffer.seek(0)
+            
+            # Encode the image to base64
+            image_png = buffer.getvalue()
+            buffer.close()
+            
+            encoded_string = base64.b64encode(image_png).decode('utf-8')
+            return encoded_string
         else:
             logger.warning(f"No historical data available for {ticker}")
             return None
@@ -145,6 +135,9 @@ def get_fallback_data(ticker_info):
         logger.error(f"Error creating fallback data: {str(e)}")
         return None
 
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint to verify server is running"""
@@ -202,20 +195,4 @@ def get_stocks_by_category(category):
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Add instructions for users
-    print("=" * 80)
-    print("Stock API Server")
-    print("=" * 80)
-    print("Make sure you have the required packages installed:")
-    print("  pip install flask flask-cors yfinance pandas matplotlib")
-    print("\nThe server will run on http://localhost:5000")
-    print("Endpoints:")
-    print("  - /health - Health check endpoint")
-    print("  - /stocks/<category>?order=A|D - Get stocks by category with optional sorting")
-    print("\nAvailable categories:")
-    for category in STOCK_CATEGORIES:
-        print(f"  - {category}")
-    print("=" * 80)
-    
-    # Run the app
-    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
