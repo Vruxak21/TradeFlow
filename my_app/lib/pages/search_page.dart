@@ -1,286 +1,228 @@
-// import 'package:flutter/material.dart';
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-// class SearchPage extends StatefulWidget {
-//   const SearchPage({super.key});
+class StockData {
+  final String symbol;
+  final String name;
+  final double price;
+  final double changePercent;
+  final bool isPositive;
 
-//   @override
-//   State<SearchPage> createState() => _SearchPageState();
-// }
+  StockData({
+    required this.symbol,
+    required this.name,
+    required this.price,
+    required this.changePercent,
+    required this.isPositive,
+  });
 
-// class _SearchPageState extends State<SearchPage> {
-//   final TextEditingController _searchController = TextEditingController();
-//   List<dynamic> _stockResults = [];
-//   bool _isLoading = false;
-//   bool _searchPerformed = false;
-//   String _selectedExchange = 'NSE'; // Default to NSE
+  // Factory constructor to parse JSON data
+  factory StockData.fromJson(String symbol, Map<String, dynamic> json) {
+    final quote = json['meta']['regularMarketPrice'];
+    final previousClose = json['meta']['previousClose'];
+    final changePercent = ((quote - previousClose) / previousClose) * 100;
 
-//   // Alpha Vantage API key
-//   final String _apiKey = '28JYSHXPRR3XA13H'; // Replace with your key
+    return StockData(
+      symbol: symbol,
+      name: symbol.split('.')[0], // Extract name from symbol
+      price: quote.toDouble(),
+      changePercent: changePercent,
+      isPositive: changePercent >= 0,
+    );
+  }
+}
 
-//   // Popular Indian stocks with their symbols
-//   final Map<String, List<String>> _popularStocks = {
-//     'NSE': ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'HDFC'],
-//     'BSE': ['RELIANCE.BO', 'TCS.BO', 'HDFCBANK.BO', 'INFY.BO', 'HDFC.BO'],
-//   };
+class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     _fetchTopStocks();
-//   }
+  @override
+  State<SearchPage> createState() => _SearchPageState();
+}
 
-//   Future<void> _fetchTopStocks() async {
-//     if (!mounted) return;
+class _SearchPageState extends State<SearchPage> {
+  final TextEditingController _searchController = TextEditingController();
+  List<StockData> _stockResults = [];
+  bool _isLoading = false;
 
-//     setState(() {
-//       _isLoading = true;
-//       _searchPerformed = false;
-//     });
+  @override
+  void initState() {
+    super.initState();
+    _fetchDefaultStocks();
+  }
 
-//     try {
-//       List<dynamic> results = [];
-//       final symbols = _popularStocks[_selectedExchange] ?? [];
+  Future<void> _fetchDefaultStocks() async {
+    setState(() => _isLoading = true);
 
-//       for (String symbol in symbols) {
-//         final response = await http.get(Uri.parse(
-//           'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=$symbol&apikey=$_apiKey',
-//         ));
+    // Popular Indian stocks
+    final defaultStocks = [
+      'RELIANCE.NS',   // Reliance Industries
+      'TCS.NS',        // Tata Consultancy Services
+      'HDFCBANK.NS',   // HDFC Bank
+      'INFY.NS',       // Infosys
+      'ICICIBANK.NS'   // ICICI Bank
+    ];
 
-//         if (response.statusCode == 200) {
-//           final data = json.decode(response.body);
-//           if (data['Global Quote'] != null) {
-//             final quote = data['Global Quote'];
-//             results.add({
-//               'symbol': symbol,
-//               'name': symbol.replaceAll('.BO', '').replaceAll('.NS', ''),
-//               'price': quote['05. price'],
-//               'change': quote['10. change percent'].replaceAll('%', ''),
-//               'exchange': _selectedExchange,
-//             });
-//           }
-//         }
-//       }
+    try {
+      List<StockData> results = [];
+      for (String stock in defaultStocks) {
+        final stockData = await _fetchStockData(stock);
+        if (stockData != null) {
+          results.add(stockData);
+        }
+      }
 
-//       if (mounted) {
-//         setState(() {
-//           _stockResults = results;
-//           _isLoading = false;
-//         });
-//       }
-//     } catch (e) {
-//       if (mounted) {
-//         setState(() {
-//           _isLoading = false;
-//         });
-//         _showErrorSnackBar('Error: ${e.toString()}');
-//       }
-//     }
-//   }
+      if (mounted) {
+        setState(() {
+          _stockResults = results;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error fetching stocks: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
-//   Future<void> _searchStocks(String query) async {
-//     if (!mounted) return;
+  Future<StockData?> _fetchStockData(String symbol) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://query1.finance.yahoo.com/v8/finance/chart/$symbol'),
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+        },
+      );
 
-//     if (query.isEmpty) {
-//       _fetchTopStocks();
-//       return;
-//     }
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final result = data['chart']['result'][0];
+        
+        return StockData.fromJson(symbol, result);
+      }
+    } catch (e) {
+      print('Error fetching stock $symbol: $e');
+    }
+    return null;
+  }
 
-//     setState(() {
-//       _isLoading = true;
-//       _searchPerformed = true;
-//     });
+  Future<void> _searchStocks(String query) async {
+    if (query.isEmpty) {
+      _fetchDefaultStocks();
+      return;
+    }
 
-//     try {
-//       // Format symbol based on exchange
-//       String symbol = _selectedExchange == 'NSE' 
-//           ? '$query.NS' 
-//           : '$query.BO';
+    setState(() => _isLoading = true);
 
-//       final response = await http.get(Uri.parse(
-//         'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=$symbol&apikey=$_apiKey',
-//       ));
+    try {
+      // Append .NS for NSE stocks
+      final symbol = '${query.toUpperCase()}.NS';
+      final stockData = await _fetchStockData(symbol);
 
-//       if (response.statusCode == 200) {
-//         final data = json.decode(response.body);
-//         if (data['Global Quote'] != null) {
-//           final quote = data['Global Quote'];
-//           if (mounted) {
-//             setState(() {
-//               _stockResults = [{
-//                 'symbol': symbol,
-//                 'name': query,
-//                 'price': quote['05. price'],
-//                 'change': quote['10. change percent'].replaceAll('%', ''),
-//                 'exchange': _selectedExchange,
-//               }];
-//               _isLoading = false;
-//             });
-//           }
-//           return;
-//         }
-//       }
+      if (mounted) {
+        setState(() {
+          _stockResults = stockData != null ? [stockData] : [];
+          _isLoading = false;
+        });
 
-//       if (mounted) {
-//         setState(() {
-//           _stockResults = [];
-//           _isLoading = false;
-//         });
-//         _showErrorSnackBar('Stock not found on $_selectedExchange');
-//       }
-//     } catch (e) {
-//       if (mounted) {
-//         setState(() {
-//           _isLoading = false;
-//         });
-//         _showErrorSnackBar('Error: ${e.toString()}');
-//       }
-//     }
-//   }
+        // Only show "Stock not found" if the search was not empty and no stock was found
+        if (stockData == null && query.isNotEmpty) {
+          _showErrorSnackBar('Stock not found');
+        }
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error searching stocks: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
-//   void _showErrorSnackBar(String message) {
-//     if (mounted) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text(message)),
-//       );
-//     }
-//   }
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
 
-//   @override
-//   void dispose() {
-//     _searchController.dispose();
-//     super.dispose();
-//   }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search NSE Stocks (e.g., TCS, RELIANCE)',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    _fetchDefaultStocks();
+                  },
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey[200],
+              ),
+              onChanged: _searchStocks,
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _stockResults.isEmpty
+                    ? const Center(child: Text('No stocks found'))
+                    : ListView.builder(
+                        itemCount: _stockResults.length,
+                        itemBuilder: (context, index) {
+                          final stock = _stockResults[index];
+                          return ListTile(
+                            title: Text(
+                              stock.symbol,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(stock.name),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '₹${stock.price.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    color: stock.isPositive ? Colors.green : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '${stock.changePercent.toStringAsFixed(2)}%',
+                                  style: TextStyle(
+                                    color: stock.isPositive ? Colors.green : Colors.red,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('Indian Stock Search'),
-//         backgroundColor: Colors.orange.shade800,
-//         actions: [
-//           Padding(
-//             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-//             child: DropdownButton<String>(
-//               value: _selectedExchange,
-//               icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-//               dropdownColor: Colors.orange.shade700,
-//               underline: Container(),
-//               items: ['NSE', 'BSE'].map((String value) {
-//                 return DropdownMenuItem<String>(
-//                   value: value,
-//                   child: Text(
-//                     value,
-//                     style: const TextStyle(color: Colors.white),
-//                   ),
-//                 );
-//               }).toList(),
-//               onChanged: (String? newValue) {
-//                 if (newValue != null) {
-//                   setState(() {
-//                     _selectedExchange = newValue;
-//                   });
-//                   _fetchTopStocks();
-//                 }
-//               },
-//             ),
-//           ),
-//         ],
-//       ),
-//       body: Column(
-//         children: [
-//           Padding(
-//             padding: const EdgeInsets.all(16.0),
-//             child: TextField(
-//               controller: _searchController,
-//               decoration: InputDecoration(
-//                 hintText: 'Search $_selectedExchange stocks...',
-//                 prefixIcon: const Icon(Icons.search),
-//                 suffixIcon: IconButton(
-//                   icon: const Icon(Icons.clear),
-//                   onPressed: () {
-//                     _searchController.clear();
-//                     _fetchTopStocks();
-//                   },
-//                 ),
-//                 border: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(15),
-//                   borderSide: BorderSide.none,
-//                 ),
-//                 filled: true,
-//                 fillColor: Colors.grey[200],
-//               ),
-//               onChanged: (value) {
-//                 if (value.length > 2) {
-//                   _searchStocks(value);
-//                 }
-//               },
-//             ),
-//           ),
-//           Expanded(
-//             child: _isLoading
-//                 ? const Center(child: CircularProgressIndicator())
-//                 : _stockResults.isEmpty
-//                     ? Center(
-//                         child: Text(
-//                           _searchPerformed
-//                               ? 'No stocks found on $_selectedExchange'
-//                               : 'Loading top $_selectedExchange stocks...',
-//                           style: const TextStyle(fontSize: 16),
-//                         ),
-//                       )
-//                     : ListView.builder(
-//                         itemCount: _stockResults.length,
-//                         itemBuilder: (context, index) {
-//                           final stock = _stockResults[index];
-//                           final change = double.tryParse(stock['change'] ?? '0') ?? 0;
-//                           final isPositive = change >= 0;
-                          
-//                           return Card(
-//                             margin: const EdgeInsets.symmetric(
-//                                 horizontal: 16, vertical: 8),
-//                             elevation: 2,
-//                             child: ListTile(
-//                               title: Text(
-//                                 stock['name'] ?? 'N/A',
-//                                 style: const TextStyle(
-//                                     fontWeight: FontWeight.bold),
-//                               ),
-//                               subtitle: Text(
-//                                 '${stock['symbol']} • ${stock['exchange']}',
-//                               ),
-//                               trailing: Column(
-//                                 mainAxisAlignment: MainAxisAlignment.center,
-//                                 crossAxisAlignment: CrossAxisAlignment.end,
-//                                 children: [
-//                                   Text(
-//                                     '₹${stock['price'] ?? 'N/A'}',
-//                                     style: TextStyle(
-//                                       color: isPositive
-//                                           ? Colors.green
-//                                           : Colors.red,
-//                                       fontWeight: FontWeight.bold,
-//                                     ),
-//                                   ),
-//                                   Text(
-//                                     '${isPositive ? '+' : ''}${stock['change']}%',
-//                                     style: TextStyle(
-//                                       color: isPositive
-//                                           ? Colors.green
-//                                           : Colors.red,
-//                                       fontSize: 12,
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                             ),
-//                           );
-//                         },
-//                       ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+}
