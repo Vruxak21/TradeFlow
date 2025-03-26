@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:convert';
 
+
+
 class StockData {
   final String symbol;
   final String name;
