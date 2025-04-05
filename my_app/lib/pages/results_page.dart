@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 
 class AppTheme {
-  // Modern slate blue theme
-  static const primary = Color(0xFF3B82F6);     // Vibrant blue
-  static const accent = Color(0xFF6366F1);      // Indigo accent
-  static final background = Color(0xFFF9FAFB);  // Light gray bg
+  // Orange theme
+  static const primary = Color(0xFFFF5722);     // Deep Orange
+  static const accent = Color(0xFFFF9800);      // Orange Accent
+  static final background = Color(0xFFFFF3E0);  // Soft Orange Background
   static const cardLight = Colors.white;
-  static const cardDark = Color(0xFF1F2937);    // Dark slate
-  static const success = Color(0xFF10B981);     // Emerald green
-  static const error = Color(0xFFEF4444);       // Red
-  static const neutral = Color(0xFF64748B);     // Slate
-  static const divider = Color(0xFFE5E7EB);     // Light gray for dividers
+  static const cardDark = Color(0xFF5D4037);    // Dark Brown
+  static const success = Color(0xFF66BB6A);     // Green
+  static const error = Color(0xFFEF5350);       // Red
+  static const neutral = Color(0xFF8D6E63);     // Light Brown for secondary
+  static const divider = Color(0xFFFFE0B2);     // Light Surface Orange
   
   // Typography system with improved readability
   static const TextStyle displayLarge = TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.bold,
-    color: Color(0xFF1F2937),  // Dark slate
+    color: Color(0xFF5D4037),  // Dark Brown
     letterSpacing: -0.5,
     height: 1.3,
   );
@@ -25,7 +25,7 @@ class AppTheme {
   static const TextStyle titleLarge = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: Color(0xFF1F2937),  // Dark slate
+    color: Color(0xFF5D4037),  // Dark Brown
     letterSpacing: -0.3,
     height: 1.3,
   );
@@ -33,7 +33,7 @@ class AppTheme {
   static const TextStyle titleMedium = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: Color(0xFF1F2937),  // Dark slate
+    color: Color(0xFF5D4037),  // Dark Brown
     letterSpacing: -0.2,
     height: 1.3,
   );
@@ -41,28 +41,29 @@ class AppTheme {
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: Color(0xFF1F2937),  // Dark slate
+    color: Color(0xFF5D4037),  // Dark Brown
+    letterSpacing: 0,
     height: 1.5,
   );
   
   static const TextStyle bodyMedium = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: Color(0xFF64748B),  // Slate for secondary text
+    color: Color(0xFF8D6E63),  // Light Brown for secondary text
     height: 1.5,
   );
   
   static const TextStyle labelMedium = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    color: Color(0xFF64748B),  // Slate for secondary text
+    color: Color(0xFF8D6E63),  // Light Brown for secondary text
     height: 1.4,
   );
   
   static const TextStyle labelSmall = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w500,
-    color: Color(0xFF94A3B8),  // Lighter slate for small labels
+    color: Color(0xFFBDBDBD),  // Lighter text for small labels
     height: 1.4,
     letterSpacing: 0.2,
   );
@@ -482,13 +483,12 @@ class ResultsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Modern price slider
-                      _buildPriceSlider(
+                      // Price position indicators instead of slider
+                      _buildPricePositions(
                         stock['stop_loss'],
                         stock['price'],
                         stock['buy_target'],
                         stock['sell_target'],
-                        isUp,
                         context,
                       ),
                       const SizedBox(height: 16),
@@ -540,7 +540,7 @@ class ResultsPage extends StatelessWidget {
                         children: strategies.map((strategy) => Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppTheme.background,
+                            color: AppTheme.primary.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
                               color: AppTheme.primary.withOpacity(0.3),
@@ -608,23 +608,14 @@ class ResultsPage extends StatelessWidget {
     );
   }
   
-  Widget _buildPriceSlider(
+  Widget _buildPricePositions(
     double stopLoss, 
     double currentPrice, 
     double buyTarget, 
     double sellTarget,
-    bool isUp,
     BuildContext context,
   ) {
-    final min = (stopLoss * 0.95).floorToDouble();
-    final max = (sellTarget * 1.05).ceilToDouble();
-    final range = max - min;
-    
-    // Calculate positions as percentages
-    final stopLossPos = ((stopLoss - min) / range * 100).clamp(0.0, 100.0);
-    final currentPos = ((currentPrice - min) / range * 100).clamp(0.0, 100.0);
-    final buyPos = ((buyTarget - min) / range * 100).clamp(0.0, 100.0);
-    final sellPos = ((sellTarget - min) / range * 100).clamp(0.0, 100.0);
+    final isCurrentAboveBuy = currentPrice > buyTarget;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,53 +635,74 @@ class ResultsPage extends StatelessWidget {
                 color: AppTheme.cardDark,
               ),
             ),
+            const Spacer(),
+            Text(
+              isCurrentAboveBuy ? "Above Buy Target" : "Below Buy Target",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isCurrentAboveBuy ? AppTheme.neutral : AppTheme.success,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
         
-        // Modern slider with gradient background
+        // Position indicators showing where price is relative to targets
         Container(
-          height: 4,
           width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(2),
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.error.withOpacity(0.5),
-                AppTheme.success.withOpacity(0.5),
-                AppTheme.accent.withOpacity(0.5),
-              ],
-              stops: [
-                stopLossPos / 100,
-                buyPos / 100,
-                sellPos / 100,
-              ],
-            ),
+            color: AppTheme.background,
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: Stack(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Current price dot
-              Positioned(
-                left: currentPos * 0.01 * MediaQuery.of(context).size.width * 0.85,
-                top: -3,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: isUp ? AppTheme.success : AppTheme.error,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                ),
+              _buildPriceIndicator(
+                "Stop Loss", 
+                currentPrice <= stopLoss * 1.05 ? true : false,
+                AppTheme.error
+              ),
+              _buildPriceIndicator(
+                "Buy Range", 
+                currentPrice <= buyTarget ? true : false,
+                AppTheme.success
+              ),
+              _buildPriceIndicator(
+                "Sell Range", 
+                currentPrice >= sellTarget * 0.95 ? true : false,
+                AppTheme.accent
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildPriceIndicator(String label, bool isActive, Color color) {
+    return Column(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive ? color : Colors.grey.shade300,
+            border: Border.all(
+              color: Colors.white,
+              width: 2,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: isActive ? color : Colors.grey,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
