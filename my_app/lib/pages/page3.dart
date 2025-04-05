@@ -370,15 +370,13 @@ class _Page3State extends State<Page3> {
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: Colors.grey.shade100,
+        backgroundColor: AppTheme.background,
         body: Column(
           children: [
-            
-
             // Filter chips section
             if (_showFilters)
               Container(
-                color: Colors.grey.shade100,
+                color: AppTheme.background,
                 padding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 child: Wrap(
@@ -389,8 +387,8 @@ class _Page3State extends State<Page3> {
                       label: Text(category),
                       selected: isSelected,
                       selectedColor: AppTheme.accent,
-                      backgroundColor: Colors.grey.shade200,
-                      checkmarkColor: Colors.black87,
+                      backgroundColor: Colors.white,
+                      checkmarkColor: AppTheme.text,
                       onSelected: (selected) {
                         setState(() {
                           if (category == 'All') {
@@ -444,10 +442,10 @@ class _Page3State extends State<Page3> {
             children: [
               Icon(Icons.error_outline, size: 48, color: AppTheme.primary),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Error Loading News',
                 style: TextStyle(
-                  color: Colors.black87,
+                  color: AppTheme.text,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -455,7 +453,7 @@ class _Page3State extends State<Page3> {
               const SizedBox(height: 8),
               Text(
                 _error!,
-                style: const TextStyle(color: Colors.black54),
+                style: TextStyle(color: AppTheme.textLight),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -486,12 +484,12 @@ class _Page3State extends State<Page3> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.article_outlined, size: 48, color: Colors.grey.shade400),
+            Icon(Icons.article_outlined, size: 48, color: AppTheme.textLight),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No Financial News Found',
               style: TextStyle(
-                color: Colors.black87,
+                color: AppTheme.text,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -563,11 +561,11 @@ class _Page3State extends State<Page3> {
                             errorBuilder: (context, error, stackTrace) =>
                                 Container(
                               height: 200,
-                              color: Colors.grey.shade200,
+                              color: AppTheme.surface,
                               child: Center(
                                 child: Icon(
                                   Icons.image_not_supported,
-                                  color: Colors.grey.shade500,
+                                  color: AppTheme.textLight,
                                   size: 32,
                                 ),
                               ),
@@ -592,8 +590,8 @@ class _Page3State extends State<Page3> {
                                   ),
                                   child: Text(
                                     article.source ?? 'News',
-                                    style: const TextStyle(
-                                      color: Colors.black,
+                                    style: TextStyle(
+                                      color: AppTheme.text,
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -603,8 +601,8 @@ class _Page3State extends State<Page3> {
                                 Expanded(
                                   child: Text(
                                     _formatDate(article.publishedAt),
-                                    style: const TextStyle(
-                                      color: Colors.black54,
+                                    style: TextStyle(
+                                      color: AppTheme.textLight,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -619,11 +617,11 @@ class _Page3State extends State<Page3> {
                               children: categories.map((category) {
                                 Color tagColor;
                                 if (category == 'Finance') {
-                                  tagColor = Colors.blue.shade100;
+                                  tagColor = AppTheme.primaryLight.withOpacity(0.3);
                                 } else if (category == 'Stock Market') {
-                                  tagColor = Colors.green.shade100;
+                                  tagColor = AppTheme.accent.withOpacity(0.3);
                                 } else {
-                                  tagColor = Colors.orange.shade100;
+                                  tagColor = AppTheme.surface;
                                 }
 
                                 return Container(
@@ -640,7 +638,7 @@ class _Page3State extends State<Page3> {
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                                      color: AppTheme.text,
                                     ),
                                   ),
                                 );
@@ -649,8 +647,8 @@ class _Page3State extends State<Page3> {
                             const SizedBox(height: 15),
                             Text(
                               article.title,
-                              style: const TextStyle(
-                                color: Colors.black87,
+                              style: TextStyle(
+                                color: AppTheme.text,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                                 height: 1.3,
@@ -660,8 +658,8 @@ class _Page3State extends State<Page3> {
                               const SizedBox(height: 10),
                               Text(
                                 article.description!,
-                                style: const TextStyle(
-                                  color: Colors.black54,
+                                style: TextStyle(
+                                  color: AppTheme.textLight,
                                   height: 1.5,
                                 ),
                                 maxLines: 3,
@@ -704,11 +702,14 @@ class _Page3State extends State<Page3> {
   }
 }
 
+// Updated AppTheme class with the new orange color palette
 class AppTheme {
-  static const primary = Color(0xFFE65100);
-  static const secondary = Color(0xFFEF6C00);
-  static const accent = Color(0xFFFFA726);
-  static final background = Colors.grey.shade50;
-  static const cardLight = Colors.white;
-  static final cardDark = Colors.orange.shade800;
+  static const primary = Color(0xFFFF5722);       // Deep Orange
+  static const primaryLight = Color(0xFFFF7043);  // Light Orange
+  static const primaryDark = Color(0xFFE64A19);   // Dark Orange
+  static const accent = Color(0xFFFF9800);        // Orange Accent
+  static final background = Color(0xFFFFF3E0);    // Soft Orange Background
+  static final surface = Color(0xFFFFE0B2);       // Light Surface Orange
+  static const text = Color(0xFF5D4037);          // Dark Brown for text
+  static const textLight = Color(0xFF8D6E63);     // Lighter Brown for secondary text
 }

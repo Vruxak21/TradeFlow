@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'category_detail_page.dart';
 
 class AppTheme {
-  static const primary = Color(0xFFE65100);
-  static const secondary = Color(0xFFEF6C00);
-  static const accent = Color(0xFFFFA726); // Light orange color for icons and text
-  static final background = Colors.grey.shade50;
-  static const cardLight = Colors.white;
-  static final cardDark = Colors.orange.shade800;
-  static const borderColor = Color(0xFFE65100); // Constant border color
+  static const primary = Color(0xFFFF5722);       // Deep Orange
+  static const primaryLight = Color(0xFFFF7043);  // Light Orange
+  static const primaryDark = Color(0xFFE64A19);   // Dark Orange
+  static const accent = Color(0xFFFF9800);        // Orange Accent
+  static const background = Color(0xFFFFF3E0);    // Soft Orange Background
+  static const surface = Color(0xFFFFE0B2);       // Light Surface Orange
+  static const text = Color(0xFF5D4037);          // Dark Brown for text
+  static const textLight = Color(0xFF8D6E63);     // Lighter Brown for secondary text
 }
 
 class Page4 extends StatelessWidget {
@@ -18,50 +19,75 @@ class Page4 extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 30),
-            // Styled heading
-            ShaderMask(
-              shaderCallback: (bounds) {
-                return LinearGradient(
-                  colors: [AppTheme.primary, AppTheme.secondary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds);
-              },
-              child: const Text(
-                "Select your Category of Stocks Wisely",
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: 0,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+              Text(
+                "Choose Category",
                 style: TextStyle(
-                  fontSize: 28, // Larger font size
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white, // Gradient will override this
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.text,
+                  letterSpacing: -0.5,
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 50),
-            _buildCategoryCard(
-              context,
-              "Technology",
-              Icons.computer,
-            ),
-            const SizedBox(height: 20),
-            _buildCategoryCard(
-              context,
-              "Defence",
-              Icons.security,
-            ),
-            const SizedBox(height: 20),
-            _buildCategoryCard(
-              context,
-              "Environment",
-              Icons.eco,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                "Select the stock category you're interested in",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: AppTheme.textLight,
+                ),
+              ),
+              const SizedBox(height: 40),
+              Expanded(
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    _buildCategoryCard(
+                      context,
+                      "Technology",
+                      Icons.computer_outlined,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCategoryCard(
+                      context,
+                      "Defence",
+                      Icons.security_outlined,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCategoryCard(
+                      context,
+                      "Environment",
+                      Icons.eco_outlined,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCategoryCard(
+                      context,
+                      "Healthcare",
+                      Icons.medical_services_outlined,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildCategoryCard(
+                      context,
+                      "Finance",
+                      Icons.account_balance_outlined,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -74,7 +100,6 @@ class Page4 extends StatelessWidget {
   ) {
     return GestureDetector(
       onTap: () {
-        // Navigate to the updated CategoryDetailPage
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -83,46 +108,52 @@ class Page4 extends StatelessWidget {
         );
       },
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 25.0, horizontal: 20.0),
         decoration: BoxDecoration(
-          color: Colors.white, // White background
-          borderRadius: BorderRadius.circular(15.0),
-          border: Border.all(
-            color: AppTheme.borderColor, // Use the constant border color
-            width: 2.0,
-          ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: AppTheme.primaryLight.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: AppTheme.secondary, // Use the light orange color for icons
-              size: 30.0,
-            ),
-            const SizedBox(width: 15.0),
-            Text(
-              title,
-              style: TextStyle(
-                color: AppTheme.secondary, // Use the light orange color for text
-                fontSize: 20.0,
-                fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppTheme.accent,
+                  size: 28,
+                ),
               ),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: AppTheme.accent,
-              size: 16,
-            ),
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.text,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: AppTheme.accent,
+                size: 16,
+              ),
+            ],
+          ),
         ),
       ),
     );
