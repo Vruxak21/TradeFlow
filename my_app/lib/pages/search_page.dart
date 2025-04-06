@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:convert';
-
-
 
 class StockData {
   final String symbol;
@@ -100,7 +97,7 @@ class _SearchPageState extends State<SearchPage> {
     },
   ];
 
-  int _currentGlossaryIndex = 0;
+  int _selectedTermIndex = 0;
 
   @override
   void initState() {
@@ -417,7 +414,7 @@ class _SearchPageState extends State<SearchPage> {
             // Financial Glossary Section Header
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.only(top: 30, left: 16, right: 16, bottom: 10),
+                padding: const EdgeInsets.only(top: 30, left: 16, right: 16, bottom: 16),
                 child: Row(
                   children: [
                     Text(
@@ -438,99 +435,175 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
 
-            // Financial Glossary Carousel
+            // Modern Financial Glossary Navigation
             SliverToBoxAdapter(
               child: Container(
-                margin: const EdgeInsets.only(bottom: 30),
-                child: Column(
-                  children: [
-                    CarouselSlider.builder(
-                      itemCount: _financialTerms.length,
-                      options: CarouselOptions(
-                        height: 280,
-                        enlargeCenterPage: true,
-                        autoPlay: true,
-                        autoPlayInterval: const Duration(seconds: 5),
-                        viewportFraction: 0.85,
-                        onPageChanged: (index, reason) {
-                          setState(() {
-                            _currentGlossaryIndex = index;
-                          });
-                        },
-                      ),
-                      itemBuilder: (context, index, realIndex) {
-                        final term = _financialTerms[index];
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Card(
-                            elevation: 8,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                height: 50,
+                margin: EdgeInsets.only(bottom: 16),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _financialTerms.length,
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedTermIndex = index;
+                        });
+                      },
+                      child: Container(
+                        margin: EdgeInsets.only(right: 12),
+                        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _selectedTermIndex == index
+                              ? orangeTheme['primaryDark']
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(25),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
                             ),
-                            color: orangeTheme['surface'],
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: orangeTheme['primary']!.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      term['icon'] as IconData,
-                                      size: 40,
-                                      color: orangeTheme['primaryDark'],
-                                    ),
-                                  ),
-                                  Text(
-                                    term['term']!,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: orangeTheme['primaryDark'],
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  Text(
-                                    term['definition']!,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: orangeTheme['text'],
-                                      height: 1.5,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                          ],
+                          border: Border.all(
+                            color: _selectedTermIndex == index
+                                ? orangeTheme['primaryDark']!
+                                : Colors.grey.shade200,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _financialTerms[index]['term'],
+                          style: TextStyle(
+                            color: _selectedTermIndex == index
+                                ? Colors.white
+                                : orangeTheme['text'],
+                            fontWeight: _selectedTermIndex == index
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            // Modern Financial Glossary Content
+            SliverToBoxAdapter(
+              child: AnimatedSwitcher(
+                duration: Duration(milliseconds: 300),
+                switchInCurve: Curves.easeInOut,
+                switchOutCurve: Curves.easeInOut,
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+                child: Container(
+                  key: ValueKey<int>(_selectedTermIndex),
+                  margin: EdgeInsets.fromLTRB(16, 0, 16, 30),
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: orangeTheme['primaryLight']!.withOpacity(0.2),
+                        spreadRadius: 2,
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: orangeTheme['primary']!.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              _financialTerms[_selectedTermIndex]['icon'] as IconData,
+                              size: 28,
+                              color: orangeTheme['primaryDark'],
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              _financialTerms[_selectedTermIndex]['term'],
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: orangeTheme['primaryDark'],
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                    SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: _financialTerms.map((term) {
-                        int index = _financialTerms.indexOf(term);
-                        return Container(
-                          width: 8,
-                          height: 8,
-                          margin: EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _currentGlossaryIndex == index
-                                ? orangeTheme['primaryDark']
-                                : orangeTheme['primaryLight']!.withOpacity(0.4),
+                        ],
+                      ),
+                      Divider(
+                        height: 32,
+                        thickness: 1,
+                        color: orangeTheme['surface'],
+                      ),
+                      Text(
+                        _financialTerms[_selectedTermIndex]['definition'],
+                        style: TextStyle(
+                          fontSize: 16,
+                          height: 1.6,
+                          color: orangeTheme['text'],
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_selectedTermIndex > 0)
+                            IconButton(
+                              icon: Icon(Icons.chevron_left, color: orangeTheme['primary']),
+                              onPressed: () {
+                                setState(() {
+                                  _selectedTermIndex--;
+                                });
+                              },
+                            ),
+                          Spacer(),
+                          ...List.generate(
+                            _financialTerms.length,
+                            (index) => Container(
+                              width: 8,
+                              height: 8,
+                              margin: EdgeInsets.symmetric(horizontal: 3),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _selectedTermIndex == index
+                                    ? orangeTheme['primaryDark']
+                                    : orangeTheme['primaryLight']!.withOpacity(0.3),
+                              ),
+                            ),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                          Spacer(),
+                          if (_selectedTermIndex < _financialTerms.length - 1)
+                            IconButton(
+                              icon: Icon(Icons.chevron_right, color: orangeTheme['primary']),
+                              onPressed: () {
+                                setState(() {
+                                  _selectedTermIndex++;
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
