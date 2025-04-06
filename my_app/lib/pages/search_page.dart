@@ -223,54 +223,7 @@ class _SearchPageState extends State<SearchPage> {
       backgroundColor: orangeTheme['background'],
       body: SafeArea(
         child: CustomScrollView(
-          slivers: [
-            // App Bar with Gradient
-            SliverAppBar(
-              floating: true,
-              snap: true,
-              elevation: 0,
-              flexibleSpace: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      orangeTheme['primaryDark']!,
-                      orangeTheme['primary']!,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              ),
-              title: Row(
-                children: [
-                  Icon(Icons.analytics, color: Colors.white),
-                  SizedBox(width: 10),
-                  Text(
-                    'Stock Insight',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-              centerTitle: false,
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.info_outline, color: Colors.white),
-                  onPressed: () {
-                    // Add info action
-                  },
-                ),
-                IconButton(
-                  icon: Icon(Icons.refresh, color: Colors.white),
-                  onPressed: _fetchDefaultStocks,
-                ),
-              ],
-            ),
-
+          slivers: [          
             // Search Section
             SliverToBoxAdapter(
               child: Container(
