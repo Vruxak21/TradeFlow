@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:convert';
-
-
 
 class StockData {
   final String symbol;
@@ -100,7 +97,7 @@ class _SearchPageState extends State<SearchPage> {
     },
   ];
 
-  int _currentGlossaryIndex = 0;
+  int _selectedTermIndex = 0;
 
   @override
   void initState() {
@@ -227,36 +224,57 @@ class _SearchPageState extends State<SearchPage> {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // Header
+            // App Bar with Gradient
             SliverAppBar(
               floating: true,
               snap: true,
-              backgroundColor: orangeTheme['background'],
               elevation: 0,
-              title: Text(
-                'Stock Insight',
-                style: TextStyle(
-                  color: orangeTheme['primaryDark'],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                  letterSpacing: 1.2,
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      orangeTheme['primaryDark']!,
+                      orangeTheme['primary']!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
+              ),
+              title: Row(
+                children: [
+                  Icon(Icons.analytics, color: Colors.white),
+                  SizedBox(width: 10),
+                  Text(
+                    'Stock Insight',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
               centerTitle: false,
               actions: [
                 IconButton(
-                  icon: Icon(Icons.info_outline, color: orangeTheme['primary']),
+                  icon: Icon(Icons.info_outline, color: Colors.white),
                   onPressed: () {
                     // Add info action
                   },
+                ),
+                IconButton(
+                  icon: Icon(Icons.refresh, color: Colors.white),
+                  onPressed: _fetchDefaultStocks,
                 ),
               ],
             ),
 
             // Search Section
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
+              child: Container(
+                padding: const EdgeInsets.all(16.0),
                 child: Container(
                   decoration: BoxDecoration(
                     boxShadow: [
@@ -361,7 +379,9 @@ class _SearchPageState extends State<SearchPage> {
                                 leading: Container(
                                   padding: EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: orangeTheme['primary']!.withOpacity(0.1),
+                                    color: stock.isPositive 
+                                        ? Colors.green.withOpacity(0.1) 
+                                        : Colors.red.withOpacity(0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
@@ -416,10 +436,15 @@ class _SearchPageState extends State<SearchPage> {
 
             // Financial Glossary Section Header
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 30, left: 16, right: 16, bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 30, 16, 16),
                 child: Row(
                   children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      color: orangeTheme['accent'],
+                    ),
+                    SizedBox(width: 10),
                     Text(
                       'Financial Glossary',
                       style: TextStyle(
@@ -428,107 +453,300 @@ class _SearchPageState extends State<SearchPage> {
                         color: orangeTheme['primaryDark'],
                       ),
                     ),
-                    Spacer(),
-                    Icon(
-                      Icons.lightbulb_outline,
-                      color: orangeTheme['accent'],
-                    ),
                   ],
                 ),
               ),
             ),
 
-            // Financial Glossary Carousel
+            // Fixed the alignment issue: Modern Financial Glossary Navigation
             SliverToBoxAdapter(
               child: Container(
-                margin: const EdgeInsets.only(bottom: 30),
-                child: Column(
-                  children: [
-                    CarouselSlider.builder(
-                      itemCount: _financialTerms.length,
-                      options: CarouselOptions(
-                        height: 280,
-                        enlargeCenterPage: true,
-                        autoPlay: true,
-                        autoPlayInterval: const Duration(seconds: 5),
-                        viewportFraction: 0.85,
-                        onPageChanged: (index, reason) {
-                          setState(() {
-                            _currentGlossaryIndex = index;
-                          });
-                        },
-                      ),
-                      itemBuilder: (context, index, realIndex) {
-                        final term = _financialTerms[index];
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Card(
-                            elevation: 8,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                height: 70,
+                padding: EdgeInsets.only(bottom: 16),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _financialTerms.length,
+                  // Added extra padding to ensure content is properly visible
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: EdgeInsets.only(right: 12, top: 4, bottom: 4),
+                      child: Material(
+                        elevation: 2,
+                        borderRadius: BorderRadius.circular(25),
+                        color: _selectedTermIndex == index
+                            ? orangeTheme['primaryDark']
+                            : Colors.white,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(25),
+                          onTap: () {
+                            setState(() {
+                              _selectedTermIndex = index;
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(25),
+                              border: Border.all(
+                                color: _selectedTermIndex == index
+                                    ? orangeTheme['primaryDark']!
+                                    : Colors.grey.shade200,
+                                width: 1,
+                              ),
                             ),
-                            color: orangeTheme['surface'],
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: orangeTheme['primary']!.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      term['icon'] as IconData,
-                                      size: 40,
-                                      color: orangeTheme['primaryDark'],
-                                    ),
-                                  ),
-                                  Text(
-                                    term['term']!,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: orangeTheme['primaryDark'],
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  Text(
-                                    term['definition']!,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: orangeTheme['text'],
-                                      height: 1.5,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                            child: Text(
+                              _financialTerms[index]['term'],
+                              style: TextStyle(
+                                color: _selectedTermIndex == index
+                                    ? Colors.white
+                                    : orangeTheme['text'],
+                                fontWeight: _selectedTermIndex == index
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            // Modern Financial Glossary Content - Card with shadow and improved spacing
+            SliverToBoxAdapter(
+              child: AnimatedSwitcher(
+                duration: Duration(milliseconds: 300),
+                switchInCurve: Curves.easeInOut,
+                switchOutCurve: Curves.easeInOut,
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(0.05, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
                     ),
-                    SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: _financialTerms.map((term) {
-                        int index = _financialTerms.indexOf(term);
-                        return Container(
-                          width: 8,
-                          height: 8,
-                          margin: EdgeInsets.symmetric(horizontal: 4),
+                  );
+                },
+                child: Container(
+                  key: ValueKey<int>(_selectedTermIndex),
+                  margin: EdgeInsets.fromLTRB(16, 0, 16, 30),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: orangeTheme['primaryLight']!.withOpacity(0.2),
+                        spreadRadius: 2,
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: orangeTheme['surface']!,
+                      width: 1,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Column(
+                      children: [
+                        // Header with gradient background
+                        Container(
+                          padding: EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _currentGlossaryIndex == index
-                                ? orangeTheme['primaryDark']
-                                : orangeTheme['primaryLight']!.withOpacity(0.4),
+                            gradient: LinearGradient(
+                              colors: [
+                                orangeTheme['primary']!.withOpacity(0.8),
+                                orangeTheme['primaryLight']!.withOpacity(0.6),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                           ),
-                        );
-                      }).toList(),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  _financialTerms[_selectedTermIndex]['icon'] as IconData,
+                                  size: 28,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  _financialTerms[_selectedTermIndex]['term'],
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Content
+                        Container(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _financialTerms[_selectedTermIndex]['definition'],
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  height: 1.6,
+                                  color: orangeTheme['text'],
+                                ),
+                              ),
+                              SizedBox(height: 20),
+                              // Navigation dots and arrows
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.arrow_back_ios_rounded,
+                                      color: _selectedTermIndex > 0
+                                          ? orangeTheme['primary']
+                                          : Colors.grey.withOpacity(0.3),
+                                      size: 20,
+                                    ),
+                                    onPressed: _selectedTermIndex > 0
+                                        ? () {
+                                            setState(() {
+                                              _selectedTermIndex--;
+                                            });
+                                          }
+                                        : null,
+                                  ),
+                                  Expanded(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: List.generate(
+                                        _financialTerms.length,
+                                        (index) => Container(
+                                          width: 8,
+                                          height: 8,
+                                          margin: EdgeInsets.symmetric(horizontal: 3),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: _selectedTermIndex == index
+                                                ? orangeTheme['primaryDark']
+                                                : orangeTheme['primaryLight']!.withOpacity(0.3),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      color: _selectedTermIndex < _financialTerms.length - 1
+                                          ? orangeTheme['primary']
+                                          : Colors.grey.withOpacity(0.3),
+                                      size: 20,
+                                    ),
+                                    onPressed: _selectedTermIndex < _financialTerms.length - 1
+                                        ? () {
+                                            setState(() {
+                                              _selectedTermIndex++;
+                                            });
+                                          }
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Added bottom section with quick market insights
+            SliverToBoxAdapter(
+              child: Container(
+                margin: EdgeInsets.fromLTRB(16, 0, 16, 30),
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      orangeTheme['primaryDark']!,
+                      orangeTheme['primary']!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.insights,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Quick Market Insights',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 15),
+                    Text(
+                      'Stay informed with the latest market trends and investment opportunities.',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 15),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Add action for market insights
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: orangeTheme['primaryDark'],
+                        backgroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'View Market Analysis',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
